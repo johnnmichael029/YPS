@@ -29,7 +29,7 @@ if (!is_user_logged_in() || (!current_user_can('manage_options') && !current_use
             </a>
         </div>
         <div class="sidebar-section-title">Main</div>
-        <a href="#" class="sidebar-link active" id="sidebar-dashboard">
+        <a href="#dashboard" class="sidebar-link active" id="sidebar-dashboard" data-tab="tab-dashboard">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
             Dashboard
         </a>
@@ -47,14 +47,14 @@ if (!is_user_logged_in() || (!current_user_can('manage_options') && !current_use
         </a>
 
         <div class="sidebar-section-title">Reports</div>
-        <a href="#" class="sidebar-link" id="sidebar-analytics">
+        <a href="#dashboard" class="sidebar-link" id="sidebar-analytics" data-tab="tab-dashboard">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
             Analytics
         </a>
 
         <?php if (YPS_RBAC::can_manage_users()) : ?>
         <div class="sidebar-section-title">Access Control</div>
-        <a href="#users-management-card" class="sidebar-link" id="sidebar-users">
+        <a href="#rbac" class="sidebar-link" id="sidebar-users" data-tab="tab-rbac">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             Staff &amp; Users (RBAC)
         </a>
@@ -159,6 +159,9 @@ if (!is_user_logged_in() || (!current_user_can('manage_options') && !current_use
         arsort($sales_by_game);
         $range_start = date('M j, Y', strtotime('-' . ($period - 1) . ' days', $now_ts));
         ?>
+
+        <!-- DASHBOARD TAB VIEW -->
+        <div class="admin-tab-content active" id="tab-dashboard">
 
         <!-- Top Bar -->
         <div class="admin-topbar" id="admin-topbar">
@@ -364,111 +367,174 @@ if (!is_user_logged_in() || (!current_user_can('manage_options') && !current_use
                 </table>
             </div>
         </div>
+        </div>
+        <!-- END DASHBOARD TAB -->
 
-        <!-- RBAC: STAFF & USER MANAGEMENT CARD (Super Admin Only) -->
+        <!-- RBAC TAB VIEW (Super Admin Only) -->
         <?php if (YPS_RBAC::can_manage_users()) : ?>
-        <div class="admin-card" id="users-management-card" style="margin-top:28px;">
-            <div class="admin-card-header">
-                <div class="admin-card-title">🛡️ Role-Based Access Control (RBAC) &amp; Staff Management</div>
-                <span style="font-size:0.78rem;background:#f0fff4;color:#16a34a;padding:4px 10px;border-radius:999px;font-weight:700;border:1px solid #bbf7d0;">Super Admin Only</span>
+        <div class="admin-tab-content" id="tab-rbac" style="display:none;">
+            
+            <!-- RBAC Top Bar -->
+            <div class="admin-topbar" id="rbac-topbar">
+                <div>
+                    <h1>🛡️ Role-Based Access Control (RBAC)</h1>
+                    <div class="admin-date">
+                        Create &amp; manage staff accounts, pilot permissions, and access privileges
+                    </div>
+                </div>
+                <div style="display:flex;gap:10px;align-items:center;">
+                    <span style="font-size:0.82rem;background:#f0fff4;color:#16a34a;padding:6px 14px;border-radius:999px;font-weight:700;border:1px solid #bbf7d0;">Super Admin Only</span>
+                    <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#FF6B9D,#9B59B6);display:flex;align-items:center;justify-content:center;color:white;font-size:0.85rem;font-weight:800;" title="<?php echo esc_attr(wp_get_current_user()->display_name); ?>">
+                        <?php echo esc_html(strtoupper(substr(wp_get_current_user()->display_name, 0, 1))); ?>
+                    </div>
+                </div>
             </div>
 
-            <!-- Create Account Form -->
-            <div style="background:#fcfaff;border:1px solid #f0e6ff;border-radius:12px;padding:20px;margin-bottom:24px;">
-                <h4 style="font-size:1.05rem;font-weight:800;color:#6b21a8;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
-                    <span>➕</span> Create Staff / Pilot Account
-                </h4>
-                <form id="create-user-form" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:14px;align-items:end;">
-                    <div>
-                        <label style="font-size:0.8rem;font-weight:700;color:#555;display:block;margin-bottom:4px;">Full Name *</label>
-                        <input type="text" class="form-input" id="user-display-name" required placeholder="e.g. Sarah Connor">
-                    </div>
-                    <div>
-                        <label style="font-size:0.8rem;font-weight:700;color:#555;display:block;margin-bottom:4px;">Username *</label>
-                        <input type="text" class="form-input" id="user-username" required placeholder="e.g. sarah_staff">
-                    </div>
-                    <div>
-                        <label style="font-size:0.8rem;font-weight:700;color:#555;display:block;margin-bottom:4px;">Email *</label>
-                        <input type="email" class="form-input" id="user-email" required placeholder="sarah@ypsgaming.com">
-                    </div>
-                    <div>
-                        <label style="font-size:0.8rem;font-weight:700;color:#555;display:block;margin-bottom:4px;">Password *</label>
-                        <input type="password" class="form-input" id="user-password" required placeholder="••••••••">
-                    </div>
-                    <div>
-                        <label style="font-size:0.8rem;font-weight:700;color:#555;display:block;margin-bottom:4px;">RBAC Role *</label>
-                        <select class="checkout-select" id="user-role" required style="padding:10px;">
-                            <option value="yps_staff">👤 Staff Manager (Read/Create/Update, NO Delete)</option>
-                            <option value="yps_pilot">⚡ Pilot (Assigned Orders Only)</option>
-                            <option value="administrator">👑 Super Admin (Full Privileges)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <button type="submit" class="yps-btn yps-btn-primary" id="create-user-btn" style="width:100%;justify-content:center;padding:12px;">
-                            Create Account →
-                        </button>
-                    </div>
-                </form>
-                <div id="create-user-msg" style="display:none;margin-top:12px;padding:8px 12px;border-radius:8px;font-size:0.85rem;font-weight:600;"></div>
-            </div>
+            <!-- STAFF & USER MANAGEMENT CARD -->
+            <div class="admin-card" id="users-management-card">
+                <!-- Create Account Form -->
+                <div style="background:#fcfaff;border:1px solid #f0e6ff;border-radius:12px;padding:20px;margin-bottom:24px;">
+                    <h4 style="font-size:1.05rem;font-weight:800;color:#6b21a8;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+                        <span>➕</span> Create Staff / Pilot Account
+                    </h4>
+                    <form id="create-user-form" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:14px;align-items:end;">
+                        <div>
+                            <label style="font-size:0.8rem;font-weight:700;color:#555;display:block;margin-bottom:4px;">Full Name *</label>
+                            <input type="text" class="form-input" id="user-display-name" required placeholder="e.g. Sarah Connor">
+                        </div>
+                        <div>
+                            <label style="font-size:0.8rem;font-weight:700;color:#555;display:block;margin-bottom:4px;">Username *</label>
+                            <input type="text" class="form-input" id="user-username" required placeholder="e.g. sarah_staff">
+                        </div>
+                        <div>
+                            <label style="font-size:0.8rem;font-weight:700;color:#555;display:block;margin-bottom:4px;">Email *</label>
+                            <input type="email" class="form-input" id="user-email" required placeholder="sarah@ypsgaming.com">
+                        </div>
+                        <div>
+                            <label style="font-size:0.8rem;font-weight:700;color:#555;display:block;margin-bottom:4px;">Password *</label>
+                            <input type="password" class="form-input" id="user-password" required placeholder="••••••••">
+                        </div>
+                        <div>
+                            <label style="font-size:0.8rem;font-weight:700;color:#555;display:block;margin-bottom:4px;">RBAC Role *</label>
+                            <select class="checkout-select" id="user-role" required style="padding:10px;">
+                                <option value="yps_staff">👤 Staff Manager (Read/Create/Update, NO Delete)</option>
+                                <option value="yps_pilot">⚡ Pilot (Assigned Orders Only)</option>
+                                <option value="administrator">👑 Super Admin (Full Privileges)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <button type="submit" class="yps-btn yps-btn-primary" id="create-user-btn" style="width:100%;justify-content:center;padding:12px;">
+                                Create Account →
+                            </button>
+                        </div>
+                    </form>
+                    <div id="create-user-msg" style="display:none;margin-top:12px;padding:8px 12px;border-radius:8px;font-size:0.85rem;font-weight:600;"></div>
+                </div>
 
-            <!-- Existing Accounts Table -->
-            <div style="overflow-x:auto;">
-                <table class="admin-table" id="users-table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Username</th>
-                            <th>Email</th>
-                            <th>RBAC Access Level</th>
-                            <th>Registered Date</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php
-                        $yps_users = get_users(array(
-                            'orderby' => 'registered',
-                            'order'   => 'DESC',
-                            'number'  => 30,
-                        ));
+                <!-- Existing Accounts Table -->
+                <div style="overflow-x:auto;">
+                    <table class="admin-table" id="users-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>RBAC Access Level</th>
+                                <th>Registered Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php
+                            $yps_users = get_users(array(
+                                'orderby' => 'registered',
+                                'order'   => 'DESC',
+                                'number'  => 30,
+                            ));
 
-                        $role_labels = array(
-                            'administrator' => array('label' => '👑 Super Admin', 'color' => '#dc2626', 'bg' => '#fef2f2', 'border' => '#fecaca'),
-                            'yps_staff'     => array('label' => '👤 Staff Manager', 'color' => '#9333ea', 'bg' => '#fdf4ff', 'border' => '#f5d0fe'),
-                            'yps_pilot'     => array('label' => '⚡ Pilot',         'color' => '#2563eb', 'bg' => '#eff6ff', 'border' => '#bfdbfe'),
-                            'yps_customer'  => array('label' => '🛍️ Customer',      'color' => '#16a34a', 'bg' => '#f0fff4', 'border' => '#bbf7d0'),
-                        );
+                            $role_labels = array(
+                                'administrator' => array('label' => '👑 Super Admin', 'color' => '#dc2626', 'bg' => '#fef2f2', 'border' => '#fecaca'),
+                                'yps_staff'     => array('label' => '👤 Staff Manager', 'color' => '#9333ea', 'bg' => '#fdf4ff', 'border' => '#f5d0fe'),
+                                'yps_pilot'     => array('label' => '⚡ Pilot',         'color' => '#2563eb', 'bg' => '#eff6ff', 'border' => '#bfdbfe'),
+                                'yps_customer'  => array('label' => '🛍️ Customer',      'color' => '#16a34a', 'bg' => '#f0fff4', 'border' => '#bbf7d0'),
+                            );
 
-                        foreach ($yps_users as $u) :
-                            $roles = (array) $u->roles;
-                            $primary_role = !empty($roles[0]) ? $roles[0] : 'subscriber';
-                            $r_info = $role_labels[$primary_role] ?? array('label' => ucfirst($primary_role), 'color' => '#666', 'bg' => '#f3f4f6', 'border' => '#e5e7eb');
-                        ?>
-                        <tr id="user-row-<?php echo $u->ID; ?>">
-                            <td style="font-weight:700;color:#1e1e2f;">
-                                <?php echo esc_html($u->display_name); ?>
-                            </td>
-                            <td style="color:#666;font-family:monospace;"><?php echo esc_html($u->user_login); ?></td>
-                            <td style="color:#555;"><?php echo esc_html($u->user_email); ?></td>
-                            <td>
-                                <span style="font-weight:700;font-size:0.78rem;color:<?php echo $r_info['color']; ?>;background:<?php echo $r_info['bg']; ?>;border:1px solid <?php echo $r_info['border']; ?>;padding:3px 10px;border-radius:999px;">
-                                    <?php echo esc_html($r_info['label']); ?>
-                                </span>
-                            </td>
-                            <td style="color:#aaa;font-size:0.82rem;"><?php echo date('M j, Y', strtotime($u->user_registered)); ?></td>
-                        </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
+                            foreach ($yps_users as $u) :
+                                $roles = (array) $u->roles;
+                                $primary_role = !empty($roles[0]) ? $roles[0] : 'subscriber';
+                                $r_info = $role_labels[$primary_role] ?? array('label' => ucfirst($primary_role), 'color' => '#666', 'bg' => '#f3f4f6', 'border' => '#e5e7eb');
+                            ?>
+                            <tr id="user-row-<?php echo $u->ID; ?>">
+                                <td style="font-weight:700;color:#1e1e2f;">
+                                    <?php echo esc_html($u->display_name); ?>
+                                </td>
+                                <td style="color:#666;font-family:monospace;"><?php echo esc_html($u->user_login); ?></td>
+                                <td style="color:#555;"><?php echo esc_html($u->user_email); ?></td>
+                                <td>
+                                    <span style="font-weight:700;font-size:0.78rem;color:<?php echo $r_info['color']; ?>;background:<?php echo $r_info['bg']; ?>;border:1px solid <?php echo $r_info['border']; ?>;padding:3px 10px;border-radius:999px;">
+                                        <?php echo esc_html($r_info['label']); ?>
+                                    </span>
+                                </td>
+                                <td style="color:#aaa;font-size:0.82rem;"><?php echo date('M j, Y', strtotime($u->user_registered)); ?></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
         <?php endif; ?>
+        <!-- END RBAC TAB -->
 
     </main>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+
+    // Tab Switching Logic
+    function switchAdminTab(tabId) {
+        document.querySelectorAll('.admin-tab-content').forEach(function(content) {
+            content.style.display = 'none';
+            content.classList.remove('active');
+        });
+        document.querySelectorAll('.sidebar-link[data-tab]').forEach(function(link) {
+            link.classList.remove('active');
+        });
+
+        var targetContent = document.getElementById(tabId);
+        if (targetContent) {
+            targetContent.style.display = 'block';
+            targetContent.classList.add('active');
+        }
+
+        var targetLink = document.querySelector('.sidebar-link[data-tab="' + tabId + '"]');
+        if (targetLink) {
+            targetLink.classList.add('active');
+        }
+    }
+
+    document.querySelectorAll('.sidebar-link[data-tab]').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            var tabId = this.getAttribute('data-tab');
+            switchAdminTab(tabId);
+            if (history.pushState) {
+                history.pushState(null, null, '#' + tabId.replace('tab-', ''));
+            }
+        });
+    });
+
+    function checkHashTab() {
+        var hash = window.location.hash;
+        if (hash === '#rbac' || hash === '#users' || hash === '#users-management-card') {
+            switchAdminTab('tab-rbac');
+        } else {
+            switchAdminTab('tab-dashboard');
+        }
+    }
+    checkHashTab();
+    window.addEventListener('hashchange', checkHashTab);
+
     const statusSelects = document.querySelectorAll('.yps-status-select');
     statusSelects.forEach(function(select) {
         select.addEventListener('change', function() {
@@ -577,7 +643,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         msgDiv.textContent = '✅ ' + data.data.message;
                         msgDiv.style.display = 'block';
                         createUserForm.reset();
-                        setTimeout(() => { window.location.reload(); }, 1200);
+                        setTimeout(() => { window.location.hash = '#rbac'; window.location.reload(); }, 1200);
                     } else {
                         msgDiv.style.background = '#f8d7da';
                         msgDiv.style.color = '#721c24';

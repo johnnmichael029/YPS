@@ -44,34 +44,53 @@ get_header();
         <?php
         $service_blocks = yps_get_service_catalog();
 
-        foreach ($service_blocks as $block) :
-        ?>
+        foreach ($service_blocks as $block) : ?>
         <div class="service-game-block fade-up" data-game="<?php echo esc_attr($block['id']); ?>" id="services-<?php echo esc_attr($block['id']); ?>">
-            <div class="game-block-header">
-                <div class="game-block-icon"><?php echo $block['icon']; ?></div>
+            <div class="game-block-header" style="margin-bottom:28px;">
+                <div class="game-block-icon" style="font-size:2.5rem;"><?php echo $block['icon']; ?></div>
                 <div>
-                    <h2 class="game-block-title"><?php echo esc_html($block['name']); ?></h2>
-                    <div class="game-block-sub">Choose a service to get started</div>
+                    <h2 class="game-block-title" style="font-size:1.8rem;font-weight:800;"><?php echo esc_html($block['name']); ?></h2>
+                    <div class="game-block-sub" style="color:#777;font-size:0.9rem;">Choose a service category to get started</div>
                 </div>
             </div>
-            <div class="service-cards-grid">
-                <?php foreach ($block['services'] as $idx => $service) : ?>
-                <div class="service-card" id="service-<?php echo esc_attr($block['id'] . '-' . $idx); ?>">
-                    <div class="service-icon"><?php echo $service['icon']; ?></div>
-                    <h3 class="service-name"><?php echo esc_html($service['name']); ?></h3>
-                    <span class="service-type-badge"><?php echo esc_html($service['type']); ?></span>
-                    <div class="service-price">
-                        <?php echo esc_html($service['price']); ?>
-                        <span>/ session</span>
+
+            <?php foreach ($block['categories'] as $cat_idx => $cat) : ?>
+                <div class="service-category-group" style="margin-bottom:36px;background:#fff;border-radius:16px;padding:24px;box-shadow:0 4px 20px rgba(0,0,0,0.04);">
+                    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px;border-bottom:2px solid #f5f5f7;padding-bottom:12px;">
+                        <h3 style="font-size:1.25rem;font-weight:800;color:#1e1e2f;display:flex;align-items:center;gap:8px;margin:0;">
+                            <span><?php echo $cat['icon']; ?></span> <?php echo esc_html($cat['name']); ?>
+                        </h3>
+                        <?php if (!empty($cat['addon'])) : ?>
+                            <span style="background:rgba(255,107,157,0.12);color:#ff4785;border:1px dashed #ff4785;padding:4px 12px;border-radius:99px;font-size:0.78rem;font-weight:700;">
+                                ⚡ Add-on available: <?php echo esc_html($cat['addon']['name']); ?> (+<?php echo esc_html(yps_format_money($cat['addon']['price'])); ?>)
+                            </span>
+                        <?php endif; ?>
                     </div>
-                    <p class="service-desc"><?php echo esc_html($service['desc']); ?></p>
-                    <a href="<?php echo esc_url(add_query_arg(array('game' => $block['id'], 'service' => sanitize_title($service['name'])), home_url('/checkout'))); ?>" 
-                       class="yps-btn yps-btn-primary yps-btn-sm">
-                        Book Now →
-                    </a>
+
+                    <?php if (!empty($cat['note'])) : ?>
+                        <div style="background:#f0f7ff;border-left:4px solid #3b82f6;padding:10px 14px;border-radius:6px;font-size:0.83rem;color:#1e40af;margin-bottom:20px;line-height:1.5;">
+                            📌 <strong>Important Note:</strong> <?php echo esc_html($cat['note']); ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <div class="service-cards-grid">
+                        <?php foreach ($cat['items'] as $item_idx => $item) : ?>
+                        <div class="service-card" id="service-<?php echo esc_attr($block['id'] . '-' . $item['slug']); ?>">
+                            <div class="service-icon" style="font-size:1.8rem;margin-bottom:8px;"><?php echo $cat['icon']; ?></div>
+                            <h4 class="service-name" style="font-size:1.05rem;font-weight:700;margin-bottom:6px;"><?php echo esc_html($item['name']); ?></h4>
+                            <span class="service-type-badge"><?php echo esc_html($cat['name']); ?></span>
+                            <div class="service-price" style="margin:12px 0;font-size:1.3rem;font-weight:800;color:#ff4785;">
+                                <?php echo esc_html(yps_format_service_price($item)); ?>
+                            </div>
+                            <a href="<?php echo esc_url(add_query_arg(array('game' => $block['id'], 'service' => $item['slug']), home_url('/checkout'))); ?>" 
+                               class="yps-btn yps-btn-primary yps-btn-sm" style="width:100%;text-align:center;">
+                                Book Now →
+                            </a>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
                 </div>
-                <?php endforeach; ?>
-            </div>
+            <?php endforeach; ?>
         </div>
         <?php endforeach; ?>
     </div>

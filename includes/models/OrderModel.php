@@ -15,14 +15,23 @@ class YPS_Order_Model {
         $service  = sanitize_text_field($data['service'] ?? '');
         $name     = sanitize_text_field($data['name'] ?? '');
         $email    = sanitize_email($data['email'] ?? '');
+        $notes    = sanitize_textarea_field($data['notes'] ?? '');
         $customer_id = get_current_user_id();
 
         if (empty($game) || empty($service) || empty($name) || empty($email)) {
             return new WP_Error('missing_fields', 'Please fill all required fields.');
         }
 
+        $found = yps_find_service($game, $service);
+        if (!$found) {
+            return new WP_Error('invalid_service', 'Please select a valid service.');
+        }
+
+        $quantity  = $found['item']['unit'] ? max(1, min(999, intval($data['quantity'] ?? 1))) : 1;
+        $has_addon = !empty($data['addon']) && !empty($found['category']['addon']);
+        $amount    = yps_calculate_order_amount($game, $service, $quantity, $has_addon);
+
         $order_num = 'YPS' . strtoupper(substr(md5(time() . $email), 0, 8));
-        $amount    = yps_get_service_price($game, $service);
 
         $order_id = wp_insert_post(array(
             'post_type'   => 'yps_order',
@@ -32,7 +41,10 @@ class YPS_Order_Model {
                 'yps_order_id'       => $order_num,
                 'yps_game'           => $game,
                 'yps_service'        => $service,
+                'yps_quantity'       => $quantity,
+                'yps_addon'          => $has_addon ? $found['category']['addon']['name'] : '',
                 'yps_amount'         => $amount !== null ? $amount : 0,
+                'yps_needs_quote'    => $amount === null ? 1 : 0,
                 'yps_customer_name'  => $name,
                 'yps_customer_email' => $email,
                 'yps_customer_id'    => $customer_id,
@@ -40,6 +52,7 @@ class YPS_Order_Model {
                 'yps_pilot'          => 'Unassigned',
                 'yps_start_date'     => date('Y-m-d'),
                 'yps_est_completion' => date('Y-m-d', strtotime('+3 days')),
+                'yps_customer_notes' => $notes,
                 'yps_notes'          => '',
             ),
         ));

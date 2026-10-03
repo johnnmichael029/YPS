@@ -106,10 +106,10 @@ get_header();
                     </div>
                 </div>
 
-                <!-- Demo hint -->
+                <!-- Hint -->
                 <div style="margin-top:20px;padding:12px 16px;background:#f0f9ff;border-radius:10px;border:1px solid #bae6fd;font-size:0.8rem;color:#0284c7;display:flex;gap:8px;align-items:center;">
                     <span>💡</span>
-                    <span>Demo: Enter any order number (e.g. <strong>YPS12345</strong>) to see a sample tracking result.</span>
+                    <span>Your order number was shown after booking (e.g. <strong>YPS1A2B3C4D</strong>).</span>
                 </div>
             </div>
         </div>
@@ -151,7 +151,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 submitBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Track Order';
                 submitBtn.disabled = false;
 
-                if (data.success && data.data.found) {
+                if (data.success && data.data) {
                     const d = data.data;
                     document.getElementById('result-order-id').textContent  = d.order_id;
                     document.getElementById('result-game').textContent      = d.game;
@@ -161,20 +161,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     // Status badge
                     const statusMap = {
-                        'pending'     : { label: 'Pending Pilot',  cls: 'pending' },
-                        'in_progress' : { label: 'In Progress',    cls: 'in-progress' },
-                        'completed'   : { label: 'Completed',      cls: 'completed' },
+                        'pending'       : { label: 'Pending Pilot',  cls: 'pending' },
+                        'confirmed'     : { label: 'Pilot Assigned', cls: 'in-progress' },
+                        'in_progress'   : { label: 'In Progress',    cls: 'in-progress' },
+                        'quality_check' : { label: 'Quality Check',  cls: 'in-progress' },
+                        'completed'     : { label: 'Completed',      cls: 'completed' },
+                        'cancelled'     : { label: 'Cancelled',      cls: 'pending' },
                     };
-                    const st = statusMap[d.status] || { label: d.status, cls: 'pending' };
+                    const st = statusMap[d.status] || { label: d.status || 'Pending', cls: 'pending' };
                     document.getElementById('result-status-badge').innerHTML =
                         '<span class="status-pill ' + st.cls + '">' + st.label + '</span>';
 
                     // Update status steps
                     const steps = ['sstep-placed','sstep-assigned','sstep-progress','sstep-completed'];
                     const stagesMap = {
-                        'pending'     : 1,
-                        'in_progress' : 3,
-                        'completed'   : 4,
+                        'pending'       : 1,
+                        'confirmed'     : 2,
+                        'in_progress'   : 3,
+                        'quality_check' : 3,
+                        'completed'     : 4,
+                        'cancelled'     : 1,
                     };
                     const activeStage = stagesMap[d.status] || 1;
                     steps.forEach(function(id, i) {
@@ -187,7 +193,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     result.classList.add('visible');
                     result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 } else {
-                    errDiv.textContent = 'Order not found. Please check your order number.';
+                    errDiv.textContent = (data.data && data.data.message) || 'Order not found. Please check your order number.';
                     errDiv.style.display = 'block';
                     result.classList.remove('visible');
                 }

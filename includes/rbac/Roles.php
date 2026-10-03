@@ -13,7 +13,7 @@ class YPS_RBAC {
 
     /**
      * Register Custom Roles & Capabilities
-     * Roles: yps_admin, yps_pilot, yps_customer
+     * Roles: administrator, yps_admin, yps_staff, yps_pilot, yps_customer
      */
     public static function register_roles() {
         // 1. Customer Role
@@ -31,14 +31,31 @@ class YPS_RBAC {
             'upload_service_proof'    => true,
         ));
 
-        // 3. Admin Role (Add custom YPS capabilities to Administrator)
+        // 3. Staff / Booking Manager Role (Read/Create/Update, NO Delete, NO User Mgmt)
+        add_role('yps_staff', __('YPS Staff', 'yps-gaming'), array(
+            'read'                   => true,
+            'access_admin_dashboard' => true,
+            'manage_yps_orders'      => true,
+            'create_yps_orders'      => true,
+            'update_yps_orders'      => true,
+            'assign_yps_pilots'      => true,
+            'delete_yps_orders'      => false,
+            'manage_yps_users'       => false,
+        ));
+
+        // 4. Admin Role (Add full custom YPS capabilities to Administrator)
         $admin = get_role('administrator');
         if ($admin) {
+            $admin->add_cap('access_admin_dashboard');
             $admin->add_cap('manage_yps_orders');
+            $admin->add_cap('create_yps_orders');
+            $admin->add_cap('update_yps_orders');
+            $admin->add_cap('delete_yps_orders');
             $admin->add_cap('assign_yps_pilots');
             $admin->add_cap('manage_yps_pilots');
             $admin->add_cap('manage_yps_services');
             $admin->add_cap('view_yps_analytics');
+            $admin->add_cap('manage_yps_users');
         }
     }
 
@@ -48,6 +65,38 @@ class YPS_RBAC {
     public static function has_role($user_id, $role) {
         $user = get_userdata($user_id);
         return $user && in_array($role, (array) $user->roles);
+    }
+
+    /**
+     * Is Super Admin (Administrator)
+     */
+    public static function is_super_admin($user_id = null) {
+        if (!$user_id) $user_id = get_current_user_id();
+        return current_user_can('manage_options') || self::has_role($user_id, 'administrator') || self::has_role($user_id, 'yps_admin');
+    }
+
+    /**
+     * Can user manage orders (Staff or Admin)
+     */
+    public static function can_manage_orders($user_id = null) {
+        if (!$user_id) $user_id = get_current_user_id();
+        return self::is_super_admin($user_id) || self::has_role($user_id, 'yps_staff') || user_can($user_id, 'manage_yps_orders');
+    }
+
+    /**
+     * Can user delete orders (Super Admin ONLY)
+     */
+    public static function can_delete_orders($user_id = null) {
+        if (!$user_id) $user_id = get_current_user_id();
+        return self::is_super_admin($user_id) || user_can($user_id, 'delete_yps_orders');
+    }
+
+    /**
+     * Can user manage staff & pilot user accounts (Super Admin ONLY)
+     */
+    public static function can_manage_users($user_id = null) {
+        if (!$user_id) $user_id = get_current_user_id();
+        return self::is_super_admin($user_id) || user_can($user_id, 'manage_yps_users');
     }
 
     /**

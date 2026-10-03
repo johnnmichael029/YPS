@@ -5,7 +5,7 @@
  * Note: Restrict this page to admins only in production.
  */
 get_header();
-if (!current_user_can('manage_options')) {
+if (!is_user_logged_in() || (!current_user_can('manage_options') && !current_user_can('access_admin_dashboard') && !YPS_RBAC::can_manage_orders())) {
     wp_redirect(home_url('/'));
     exit;
 }
@@ -38,6 +38,14 @@ if (!current_user_can('manage_options')) {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
             Analytics
         </a>
+
+        <?php if (YPS_RBAC::can_manage_users()) : ?>
+        <div class="sidebar-section-title">Access Control</div>
+        <a href="#users-management-card" class="sidebar-link" id="sidebar-users">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Staff &amp; Users (RBAC)
+        </a>
+        <?php endif; ?>
 
         <div class="sidebar-section-title" style="margin-top:auto;">Account</div>
         <a href="<?php echo esc_url(admin_url()); ?>" class="sidebar-link" id="sidebar-wp-admin">
@@ -142,7 +150,7 @@ if (!current_user_can('manage_options')) {
         <!-- Top Bar -->
         <div class="admin-topbar" id="admin-topbar">
             <div>
-                <h1>Sales Tracking</h1>
+                <h1>Sales &amp; Staff Control Panel</h1>
                 <div class="admin-date">
                     📅 <?php echo esc_html($range_start); ?> — <?php echo esc_html(date('M j, Y', $now_ts)); ?>
                 </div>
@@ -151,7 +159,7 @@ if (!current_user_can('manage_options')) {
                 <button class="yps-btn yps-btn-outline yps-btn-sm" id="admin-export-btn" type="button">
                     ↓ Export
                 </button>
-                <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#FF6B9D,#9B59B6);display:flex;align-items:center;justify-content:center;color:white;font-size:0.85rem;font-weight:800;">
+                <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#FF6B9D,#9B59B6);display:flex;align-items:center;justify-content:center;color:white;font-size:0.85rem;font-weight:800;" title="<?php echo esc_attr(wp_get_current_user()->display_name); ?>">
                     <?php echo esc_html(strtoupper(substr(wp_get_current_user()->display_name, 0, 1))); ?>
                 </div>
             </div>
@@ -248,7 +256,7 @@ if (!current_user_can('manage_options')) {
         <!-- Recent Orders Table -->
         <div class="admin-card" id="recent-orders-card">
             <div class="admin-card-header">
-                <div class="admin-card-title">📋 Recent Orders</div>
+                <div class="admin-card-title">📋 Recent Bookings &amp; Orders</div>
                 <a href="<?php echo esc_url(admin_url('edit.php?post_type=yps_order')); ?>" style="font-size:0.82rem;color:var(--pink);font-weight:600;">View All →</a>
             </div>
             <div style="overflow-x:auto;">
@@ -257,7 +265,7 @@ if (!current_user_can('manage_options')) {
                         <tr>
                             <th>Order ID</th>
                             <th>Game</th>
-                            <th>Service</th>
+                            <th>Service &amp; Progress</th>
                             <th>Customer</th>
                             <th>Amount</th>
                             <th>Assigned Pilot</th>
@@ -344,6 +352,105 @@ if (!current_user_can('manage_options')) {
             </div>
         </div>
 
+        <!-- RBAC: STAFF & USER MANAGEMENT CARD (Super Admin Only) -->
+        <?php if (YPS_RBAC::can_manage_users()) : ?>
+        <div class="admin-card" id="users-management-card" style="margin-top:28px;">
+            <div class="admin-card-header">
+                <div class="admin-card-title">🛡️ Role-Based Access Control (RBAC) &amp; Staff Management</div>
+                <span style="font-size:0.78rem;background:#f0fff4;color:#16a34a;padding:4px 10px;border-radius:999px;font-weight:700;border:1px solid #bbf7d0;">Super Admin Only</span>
+            </div>
+
+            <!-- Create Account Form -->
+            <div style="background:#fcfaff;border:1px solid #f0e6ff;border-radius:12px;padding:20px;margin-bottom:24px;">
+                <h4 style="font-size:1.05rem;font-weight:800;color:#6b21a8;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+                    <span>➕</span> Create Staff / Pilot Account
+                </h4>
+                <form id="create-user-form" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:14px;align-items:end;">
+                    <div>
+                        <label style="font-size:0.8rem;font-weight:700;color:#555;display:block;margin-bottom:4px;">Full Name *</label>
+                        <input type="text" class="form-input" id="user-display-name" required placeholder="e.g. Sarah Connor">
+                    </div>
+                    <div>
+                        <label style="font-size:0.8rem;font-weight:700;color:#555;display:block;margin-bottom:4px;">Username *</label>
+                        <input type="text" class="form-input" id="user-username" required placeholder="e.g. sarah_staff">
+                    </div>
+                    <div>
+                        <label style="font-size:0.8rem;font-weight:700;color:#555;display:block;margin-bottom:4px;">Email *</label>
+                        <input type="email" class="form-input" id="user-email" required placeholder="sarah@ypsgaming.com">
+                    </div>
+                    <div>
+                        <label style="font-size:0.8rem;font-weight:700;color:#555;display:block;margin-bottom:4px;">Password *</label>
+                        <input type="password" class="form-input" id="user-password" required placeholder="••••••••">
+                    </div>
+                    <div>
+                        <label style="font-size:0.8rem;font-weight:700;color:#555;display:block;margin-bottom:4px;">RBAC Role *</label>
+                        <select class="checkout-select" id="user-role" required style="padding:10px;">
+                            <option value="yps_staff">👤 Staff Manager (Read/Create/Update, NO Delete)</option>
+                            <option value="yps_pilot">⚡ Pilot (Assigned Orders Only)</option>
+                            <option value="administrator">👑 Super Admin (Full Privileges)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button type="submit" class="yps-btn yps-btn-primary" id="create-user-btn" style="width:100%;justify-content:center;padding:12px;">
+                            Create Account →
+                        </button>
+                    </div>
+                </form>
+                <div id="create-user-msg" style="display:none;margin-top:12px;padding:8px 12px;border-radius:8px;font-size:0.85rem;font-weight:600;"></div>
+            </div>
+
+            <!-- Existing Accounts Table -->
+            <div style="overflow-x:auto;">
+                <table class="admin-table" id="users-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>RBAC Access Level</th>
+                            <th>Registered Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php
+                        $yps_users = get_users(array(
+                            'orderby' => 'registered',
+                            'order'   => 'DESC',
+                            'number'  => 30,
+                        ));
+
+                        $role_labels = array(
+                            'administrator' => array('label' => '👑 Super Admin', 'color' => '#dc2626', 'bg' => '#fef2f2', 'border' => '#fecaca'),
+                            'yps_staff'     => array('label' => '👤 Staff Manager', 'color' => '#9333ea', 'bg' => '#fdf4ff', 'border' => '#f5d0fe'),
+                            'yps_pilot'     => array('label' => '⚡ Pilot',         'color' => '#2563eb', 'bg' => '#eff6ff', 'border' => '#bfdbfe'),
+                            'yps_customer'  => array('label' => '🛍️ Customer',      'color' => '#16a34a', 'bg' => '#f0fff4', 'border' => '#bbf7d0'),
+                        );
+
+                        foreach ($yps_users as $u) :
+                            $roles = (array) $u->roles;
+                            $primary_role = !empty($roles[0]) ? $roles[0] : 'subscriber';
+                            $r_info = $role_labels[$primary_role] ?? array('label' => ucfirst($primary_role), 'color' => '#666', 'bg' => '#f3f4f6', 'border' => '#e5e7eb');
+                        ?>
+                        <tr id="user-row-<?php echo $u->ID; ?>">
+                            <td style="font-weight:700;color:#1e1e2f;">
+                                <?php echo esc_html($u->display_name); ?>
+                            </td>
+                            <td style="color:#666;font-family:monospace;"><?php echo esc_html($u->user_login); ?></td>
+                            <td style="color:#555;"><?php echo esc_html($u->user_email); ?></td>
+                            <td>
+                                <span style="font-weight:700;font-size:0.78rem;color:<?php echo $r_info['color']; ?>;background:<?php echo $r_info['bg']; ?>;border:1px solid <?php echo $r_info['border']; ?>;padding:3px 10px;border-radius:999px;">
+                                    <?php echo esc_html($r_info['label']); ?>
+                                </span>
+                            </td>
+                            <td style="color:#aaa;font-size:0.82rem;"><?php echo date('M j, Y', strtotime($u->user_registered)); ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <?php endif; ?>
+
     </main>
 </div>
 
@@ -423,6 +530,59 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
+
+    // Create Account Handler
+    const createUserForm = document.getElementById('create-user-form');
+    if (createUserForm) {
+        createUserForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('create-user-btn');
+            const msgDiv = document.getElementById('create-user-msg');
+
+            msgDiv.style.display = 'none';
+            btn.disabled = true;
+            btn.innerHTML = '<div class="yps-spinner"></div> Creating...';
+
+            const fd = new FormData();
+            fd.append('action', 'yps_create_user_account');
+            fd.append('nonce', yps_ajax.nonce);
+            fd.append('display_name', document.getElementById('user-display-name').value.trim());
+            fd.append('username', document.getElementById('user-username').value.trim());
+            fd.append('email', document.getElementById('user-email').value.trim());
+            fd.append('password', document.getElementById('user-password').value);
+            fd.append('role', document.getElementById('user-role').value);
+
+            fetch(yps_ajax.ajax_url, { method: 'POST', body: fd })
+                .then(r => r.json())
+                .then(data => {
+                    btn.disabled = false;
+                    btn.innerHTML = 'Create Account →';
+                    if (data.success) {
+                        msgDiv.style.background = '#d4edda';
+                        msgDiv.style.color = '#155724';
+                        msgDiv.style.border = '1px solid #c3e6cb';
+                        msgDiv.textContent = '✅ ' + data.data.message;
+                        msgDiv.style.display = 'block';
+                        createUserForm.reset();
+                        setTimeout(() => { window.location.reload(); }, 1200);
+                    } else {
+                        msgDiv.style.background = '#f8d7da';
+                        msgDiv.style.color = '#721c24';
+                        msgDiv.style.border = '1px solid #f5c6cb';
+                        msgDiv.textContent = '❌ ' + ((data.data && data.data.message) || 'Failed to create user account.');
+                        msgDiv.style.display = 'block';
+                    }
+                })
+                .catch(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = 'Create Account →';
+                    msgDiv.style.background = '#f8d7da';
+                    msgDiv.style.color = '#721c24';
+                    msgDiv.textContent = '❌ Network connection error.';
+                    msgDiv.style.display = 'block';
+                });
+        });
+    }
 
     // Export Recent Orders to CSV
     const exportBtn = document.getElementById('admin-export-btn');

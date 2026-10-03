@@ -1781,16 +1781,23 @@ select {
 /* ===========================
    ADMIN DASHBOARD
    =========================== */
+html:has(body.admin-dashboard-page),
+html.admin-dashboard-page-html,
 body.admin-dashboard-page {
-    margin: 0;
-    padding: 0;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
     background: #f0f2f7;
+}
+
+body.admin-dashboard-page #wpadminbar {
+    display: none !important;
 }
 
 .admin-layout {
     display: flex;
     min-height: 100vh;
     padding-top: 0;
+    margin-top: 0;
     background: #f0f2f7;
 }
 
@@ -1802,20 +1809,11 @@ body.admin-dashboard-page {
     flex-direction: column;
     gap: 8px;
     position: fixed;
-    top: 0;
+    top: 0 !important;
     left: 0;
     bottom: 0;
     overflow-y: auto;
-    z-index: 100;
-}
-
-body.admin-bar .admin-sidebar {
-    top: 32px;
-}
-@media screen and (max-width: 782px) {
-    body.admin-bar .admin-sidebar {
-        top: 46px;
-    }
+    z-index: 1000;
 }
 
 .sidebar-section-title {

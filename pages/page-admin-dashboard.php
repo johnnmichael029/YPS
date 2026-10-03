@@ -8,6 +8,9 @@ if (!is_user_logged_in() || (!current_user_can('manage_options') && !current_use
     wp_redirect(home_url('/'));
     exit;
 }
+
+// Disable default WP Admin Bar on standalone Admin Dashboard
+add_filter('show_admin_bar', '__return_false');
 ?>
 <!DOCTYPE html>
 <html <?php language_attributes(); ?>>

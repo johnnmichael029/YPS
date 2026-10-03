@@ -64,8 +64,8 @@ class YPS_Login_Routing {
         if (in_array('yps_pilot', $roles, true)) {
             return home_url('/pilot-dashboard/');
         }
-        // Customers (Phase 2 will switch this to /my-orders/)
-        return home_url('/track-order/');
+        // Customers redirect to My Orders page
+        return home_url('/my-orders/');
     }
 
     /**
@@ -90,10 +90,8 @@ class YPS_Login_Routing {
      * Page setup
      * ------------------------------------------------- */
 
-    /** Create the /login page once if it doesn't exist. Template is auto-mapped by slug. */
+    /** Create the /login and /my-orders pages once if they don't exist. Template is auto-mapped by slug. */
     public static function ensure_pages() {
-        if (get_option('yps_login_page_created')) return;
-
         if (!get_page_by_path(self::LOGIN_SLUG)) {
             wp_insert_post(array(
                 'post_type'   => 'page',
@@ -102,6 +100,16 @@ class YPS_Login_Routing {
                 'post_status' => 'publish',
             ));
         }
+
+        if (!get_page_by_path('my-orders')) {
+            wp_insert_post(array(
+                'post_type'   => 'page',
+                'post_title'  => 'My Orders',
+                'post_name'   => 'my-orders',
+                'post_status' => 'publish',
+            ));
+        }
+
         update_option('yps_login_page_created', 1);
     }
 

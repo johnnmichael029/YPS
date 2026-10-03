@@ -32,13 +32,12 @@ foreach ($all_assigned as $o) {
 }
 ?>
 
-<div class="yps-container" style="padding: 40px 0;">
+<div class="yps-container" style="padding: 20px 24px 60px; margin-top: 40px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;">
         <div>
-            <div style="font-size:0.8rem;color:#FF6B9D;font-weight:700;text-transform:uppercase;letter-spacing:1px;">👨‍✈️ Pilot Portal</div>
-            <h1 style="font-size:1.8rem;font-weight:900;color:#1a1a2e;margin-top:4px;">Welcome back, <?php echo esc_html($pilot_name); ?>! 👋</h1>
+            <div style="font-size:0.85rem;color:#FF6B9D;font-weight:700;text-transform:uppercase;letter-spacing:1px;">👨‍✈️ Pilot Portal</div>
+            <h1 style="font-size:2rem;font-weight:900;color:#1a1a2e;margin-top:4px;">Welcome back, <?php echo esc_html($pilot_name); ?>! 👋</h1>
         </div>
-        <a href="<?php echo esc_url(wp_logout_url()); ?>" class="yps-btn yps-btn-outline yps-btn-sm">Logout →</a>
     </div>
 
     <!-- Stats Row -->

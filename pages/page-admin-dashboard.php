@@ -18,6 +18,24 @@ add_filter('show_admin_bar', '__return_false');
     <meta charset="<?php bloginfo('charset'); ?>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard | <?php echo esc_html(get_bloginfo('name')); ?></title>
+    <!-- Tailwind CSS CDN for Admin Dashboard Template -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        corePlugins: {
+          preflight: false,
+        },
+        theme: {
+          extend: {
+            colors: {
+              ypsPink: '#FF6B9D',
+              ypsPurple: '#9B59B6',
+              ypsDark: '#0b132a',
+            }
+          }
+        }
+      }
+    </script>
     <?php wp_head(); ?>
 </head>
 <body <?php body_class('admin-dashboard-page'); ?>>
@@ -395,43 +413,43 @@ add_filter('show_admin_bar', '__return_false');
 
             <!-- STAFF & USER MANAGEMENT CARD -->
             <div class="admin-card" id="users-management-card">
-                <!-- Create Account Form -->
-                <div style="background:#fcfaff;border:1px solid #f0e6ff;border-radius:12px;padding:20px;margin-bottom:24px;">
-                    <h4 style="font-size:1.05rem;font-weight:800;color:#6b21a8;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
-                        <span>➕</span> Create Staff / Pilot Account
+                <!-- Create Account Form (Styled with Tailwind CSS) -->
+                <div class="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-100 rounded-xl p-6 mb-6 shadow-sm">
+                    <h4 class="text-base font-bold text-purple-900 mb-4 flex items-center gap-2">
+                        <span class="bg-purple-600 text-white rounded-md w-6 h-6 flex items-center justify-center text-xs">➕</span> Create Staff / Pilot Account
                     </h4>
-                    <form id="create-user-form" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:14px;align-items:end;">
+                    <form id="create-user-form" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
                         <div>
-                            <label style="font-size:0.8rem;font-weight:700;color:#555;display:block;margin-bottom:4px;">Full Name *</label>
-                            <input type="text" class="form-input" id="user-display-name" required placeholder="e.g. Sarah Connor">
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Full Name *</label>
+                            <input type="text" class="form-input w-full" id="user-display-name" required placeholder="e.g. Sarah Connor">
                         </div>
                         <div>
-                            <label style="font-size:0.8rem;font-weight:700;color:#555;display:block;margin-bottom:4px;">Username *</label>
-                            <input type="text" class="form-input" id="user-username" required placeholder="e.g. sarah_staff">
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Username *</label>
+                            <input type="text" class="form-input w-full" id="user-username" required placeholder="e.g. sarah_staff">
                         </div>
                         <div>
-                            <label style="font-size:0.8rem;font-weight:700;color:#555;display:block;margin-bottom:4px;">Email *</label>
-                            <input type="email" class="form-input" id="user-email" required placeholder="sarah@ypsgaming.com">
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Email *</label>
+                            <input type="email" class="form-input w-full" id="user-email" required placeholder="sarah@ypsgaming.com">
                         </div>
                         <div>
-                            <label style="font-size:0.8rem;font-weight:700;color:#555;display:block;margin-bottom:4px;">Password *</label>
-                            <input type="password" class="form-input" id="user-password" required placeholder="••••••••">
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Password *</label>
+                            <input type="password" class="form-input w-full" id="user-password" required placeholder="••••••••">
                         </div>
                         <div>
-                            <label style="font-size:0.8rem;font-weight:700;color:#555;display:block;margin-bottom:4px;">RBAC Role *</label>
-                            <select class="checkout-select" id="user-role" required style="padding:10px;">
+                            <label class="block text-xs font-bold text-slate-600 mb-1">RBAC Role *</label>
+                            <select class="checkout-select w-full p-2.5 text-sm" id="user-role" required>
                                 <option value="yps_staff">👤 Staff Manager (Read/Create/Update, NO Delete)</option>
                                 <option value="yps_pilot">⚡ Pilot (Assigned Orders Only)</option>
                                 <option value="administrator">👑 Super Admin (Full Privileges)</option>
                             </select>
                         </div>
                         <div>
-                            <button type="submit" class="yps-btn yps-btn-primary" id="create-user-btn" style="width:100%;justify-content:center;padding:12px;">
+                            <button type="submit" class="yps-btn yps-btn-primary w-full justify-center py-2.5 shadow-md" id="create-user-btn">
                                 Create Account →
                             </button>
                         </div>
                     </form>
-                    <div id="create-user-msg" style="display:none;margin-top:12px;padding:8px 12px;border-radius:8px;font-size:0.85rem;font-weight:600;"></div>
+                    <div id="create-user-msg" class="hidden mt-3 p-3 rounded-lg text-xs font-bold"></div>
                 </div>
 
                 <!-- Existing Accounts Table -->

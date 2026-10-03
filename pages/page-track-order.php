@@ -208,6 +208,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 errDiv.style.display = 'block';
             });
     });
+
+    // Auto-track if order_id parameter is present in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlOrderId = urlParams.get('order_id') || urlParams.get('id');
+    if (urlOrderId) {
+        document.getElementById('order-id-input').value = urlOrderId.trim();
+        form.dispatchEvent(new Event('submit'));
+    }
 });
 </script>
 

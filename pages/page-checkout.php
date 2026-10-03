@@ -169,9 +169,11 @@ get_header();
                         <h2 class="confirmation-title">Thank you for trusting YPS! 💖</h2>
                         <p class="confirmation-subtitle">Your order has been received. A pilot will be assigned shortly!
                         </p>
-                        <div class="order-id-box" id="confirm-order-id">YPS——</div>
-                        <p style="color:#aaa;font-size:0.82rem;margin-bottom:24px;">Save your order ID to track your
-                            service status.</p>
+                        <div class="order-id-box" id="confirm-order-id" style="cursor:pointer;position:relative;" title="Click to copy Order ID">YPS——</div>
+                        <div id="copy-badge" style="display:none;color:#10b981;font-weight:700;font-size:0.85rem;margin-top:-16px;margin-bottom:16px;">
+                            ✓ Copied to clipboard!
+                        </div>
+                        <p style="color:#aaa;font-size:0.82rem;margin-bottom:24px;">Click your order ID to copy, or track your service status below.</p>
                         <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
                             <a href="<?php echo esc_url(home_url('/track-order')); ?>" class="yps-btn yps-btn-primary"
                                 id="confirm-track-btn">
@@ -479,8 +481,36 @@ get_header();
                     btn.innerHTML = 'Proceed to Payment →';
                     btn.disabled = false;
                     const orderId = (data.success && data.data.order_id) ? data.data.order_id : 'YPS' + Math.random().toString(36).substr(2, 8).toUpperCase();
-                    document.getElementById('confirm-order-id').textContent = orderId;
-                    document.getElementById('confirm-track-btn').href = '<?php echo esc_url(home_url('/track-order')); ?>?order_id=' + orderId;
+                    
+                    const confirmBox = document.getElementById('confirm-order-id');
+                    const copyBadge = document.getElementById('copy-badge');
+                    const trackBtn = document.getElementById('confirm-track-btn');
+                    
+                    confirmBox.textContent = orderId;
+                    trackBtn.href = '<?php echo esc_url(home_url('/track-order')); ?>?order_id=' + orderId;
+
+                    function copyOrderIdToClipboard() {
+                        if (navigator.clipboard && navigator.clipboard.writeText) {
+                            navigator.clipboard.writeText(orderId);
+                        } else {
+                            const tempInput = document.createElement('input');
+                            tempInput.value = orderId;
+                            document.body.appendChild(tempInput);
+                            tempInput.select();
+                            document.execCommand('copy');
+                            document.body.removeChild(tempInput);
+                        }
+                        if (copyBadge) {
+                            copyBadge.style.display = 'block';
+                            setTimeout(function() { copyBadge.style.display = 'none'; }, 3000);
+                        }
+                    }
+
+                    confirmBox.onclick = copyOrderIdToClipboard;
+                    trackBtn.onclick = function() {
+                        copyOrderIdToClipboard();
+                    };
+
                     goToStep(3);
                 })
                 .catch(function () {
@@ -489,6 +519,7 @@ get_header();
                     // Fallback: show confirmation anyway
                     const orderId = 'YPS' + Math.random().toString(36).substr(2, 8).toUpperCase();
                     document.getElementById('confirm-order-id').textContent = orderId;
+                    document.getElementById('confirm-track-btn').href = '<?php echo esc_url(home_url('/track-order')); ?>?order_id=' + orderId;
                     goToStep(3);
                 });
         });

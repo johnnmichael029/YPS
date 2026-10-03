@@ -45,13 +45,11 @@ $status_labels = array(
     <div
         style="display: flex; justify-content: space-between; align-items: center; margin-top: 32px; margin-bottom: 32px; flex-wrap: wrap; gap: 16px;">
         <div>
-            <div
-                style="font-size: 0.82rem; color: var(--pink); font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">
-                🛍️ Customer Portal</div>
             <h1 style="font-size: 2rem; font-weight: 900; color: #1a1a2e; margin-top: 4px;">My Boosting Orders</h1>
             <p style="color: #666; font-size: 0.9rem; margin-top: 4px;">Welcome,
                 <?php echo esc_html($current_user->display_name ?: $current_user->user_login); ?>! Here is your active
-                order history.</p>
+                order history.
+            </p>
         </div>
         <div style="display: flex; gap: 12px; align-items: center;">
             <a href="<?php echo esc_url(home_url('/services')); ?>" class="yps-btn yps-btn-primary">

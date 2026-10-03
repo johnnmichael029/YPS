@@ -113,6 +113,16 @@ class YPS_Login_Routing {
             $created = true;
         }
 
+        if (!get_page_by_path('pilot-dashboard')) {
+            wp_insert_post(array(
+                'post_type'   => 'page',
+                'post_title'  => 'Pilot Dashboard',
+                'post_name'   => 'pilot-dashboard',
+                'post_status' => 'publish',
+            ));
+            $created = true;
+        }
+
         if ($created) {
             flush_rewrite_rules();
         }

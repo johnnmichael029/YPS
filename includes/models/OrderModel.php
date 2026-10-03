@@ -22,6 +22,7 @@ class YPS_Order_Model {
         }
 
         $order_num = 'YPS' . strtoupper(substr(md5(time() . $email), 0, 8));
+        $amount    = yps_get_service_price($game, $service);
 
         $order_id = wp_insert_post(array(
             'post_type'   => 'yps_order',
@@ -31,6 +32,7 @@ class YPS_Order_Model {
                 'yps_order_id'       => $order_num,
                 'yps_game'           => $game,
                 'yps_service'        => $service,
+                'yps_amount'         => $amount !== null ? $amount : 0,
                 'yps_customer_name'  => $name,
                 'yps_customer_email' => $email,
                 'yps_customer_id'    => $customer_id,

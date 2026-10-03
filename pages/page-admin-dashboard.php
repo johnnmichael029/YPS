@@ -53,20 +53,106 @@ if (!current_user_can('manage_options')) {
     <!-- Main Content -->
     <main class="admin-main" id="admin-main" role="main">
 
+        <?php
+        // =========================================================
+        // REAL DATA: aggregate every order in the database
+        // =========================================================
+        $now_ts   = current_time('timestamp');
+        $today    = date('Y-m-d', $now_ts);
+        $period   = isset($_GET['period']) ? intval($_GET['period']) : 7;
+        if (!in_array($period, array(7, 30, 90), true)) $period = 7;
+
+        $all_orders = get_posts(array(
+            'post_type'      => 'yps_order',
+            'post_status'    => 'publish',
+            'posts_per_page' => -1,
+            'orderby'        => 'date',
+            'order'          => 'DESC',
+        ));
+
+        $total_sales      = 0.0;
+        $total_orders     = count($all_orders);
+        $count_by_status  = array('pending'=>0,'confirmed'=>0,'in_progress'=>0,'quality_check'=>0,'completed'=>0,'cancelled'=>0);
+        $sales_by_game    = array();
+        $sales_by_day     = array();   // 'Y-m-d' => amount
+        $this_week_sales  = 0.0; $last_week_sales  = 0.0;
+        $this_week_orders = 0;   $last_week_orders = 0;
+
+        $week_start      = date('Y-m-d', strtotime('-6 days', $now_ts));
+        $prev_week_start = date('Y-m-d', strtotime('-13 days', $now_ts));
+
+        foreach ($all_orders as $o) {
+            $status = get_post_meta($o->ID, 'yps_status', true) ?: 'pending';
+            $amount = yps_get_order_amount($o->ID);
+            $game   = get_post_meta($o->ID, 'yps_game', true) ?: 'other';
+            $day    = get_the_date('Y-m-d', $o->ID);
+
+            if (isset($count_by_status[$status])) $count_by_status[$status]++;
+
+            // Weekly order counts (all orders)
+            if ($day >= $week_start)                                  $this_week_orders++;
+            elseif ($day >= $prev_week_start && $day < $week_start)   $last_week_orders++;
+
+            // Cancelled orders don't count toward sales
+            if ($status === 'cancelled') continue;
+
+            $total_sales += $amount;
+            $sales_by_game[$game] = ($sales_by_game[$game] ?? 0) + $amount;
+            $sales_by_day[$day]   = ($sales_by_day[$day] ?? 0) + $amount;
+
+            if ($day >= $week_start)                                  $this_week_sales += $amount;
+            elseif ($day >= $prev_week_start && $day < $week_start)   $last_week_sales += $amount;
+        }
+
+        // Week-over-week % change (null when there's nothing to compare against)
+        $pct_change = function ($current, $previous) {
+            if ($previous <= 0) return null;
+            return round((($current - $previous) / $previous) * 100, 1);
+        };
+        $sales_change  = $pct_change($this_week_sales, $last_week_sales);
+        $orders_change = $pct_change($this_week_orders, $last_week_orders);
+
+        // Chart buckets: daily for 7/30 days, weekly for 90 days
+        $chart = array();
+        if ($period === 90) {
+            for ($w = 12; $w >= 0; $w--) {
+                $end   = strtotime('-' . ($w * 7) . ' days', $now_ts);
+                $start = strtotime('-6 days', $end);
+                $sum   = 0.0;
+                for ($d = $start; $d <= $end; $d += DAY_IN_SECONDS) {
+                    $sum += $sales_by_day[date('Y-m-d', $d)] ?? 0;
+                }
+                $chart[] = array('label' => date('M j', $start), 'value' => $sum);
+            }
+        } else {
+            for ($i = $period - 1; $i >= 0; $i--) {
+                $d = strtotime('-' . $i . ' days', $now_ts);
+                $chart[] = array(
+                    'label' => $period === 7 ? date('D', $d) : date('j', $d),
+                    'value' => $sales_by_day[date('Y-m-d', $d)] ?? 0,
+                );
+            }
+        }
+        $chart_max = max(array_merge(array(0), array_column($chart, 'value')));
+
+        arsort($sales_by_game);
+        $range_start = date('M j, Y', strtotime('-' . ($period - 1) . ' days', $now_ts));
+        ?>
+
         <!-- Top Bar -->
         <div class="admin-topbar" id="admin-topbar">
             <div>
                 <h1>Sales Tracking</h1>
                 <div class="admin-date">
-                    📅 <?php echo date('M j, Y'); ?> — <?php echo date('M j, Y', strtotime('+7 days')); ?>
+                    📅 <?php echo esc_html($range_start); ?> — <?php echo esc_html(date('M j, Y', $now_ts)); ?>
                 </div>
             </div>
             <div style="display:flex;gap:10px;align-items:center;">
-                <button class="yps-btn yps-btn-outline yps-btn-sm" id="admin-export-btn">
+                <button class="yps-btn yps-btn-outline yps-btn-sm" id="admin-export-btn" type="button">
                     ↓ Export
                 </button>
                 <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#FF6B9D,#9B59B6);display:flex;align-items:center;justify-content:center;color:white;font-size:0.85rem;font-weight:800;">
-                    <?php echo strtoupper(substr(wp_get_current_user()->display_name, 0, 1)); ?>
+                    <?php echo esc_html(strtoupper(substr(wp_get_current_user()->display_name, 0, 1))); ?>
                 </div>
             </div>
         </div>
@@ -74,34 +160,23 @@ if (!current_user_can('manage_options')) {
         <!-- KPI Stats -->
         <div class="admin-stats-grid" id="admin-stats">
             <?php
-            // Query real stats from CPT
-            $total_orders    = wp_count_posts('yps_order')->publish ?? 0;
-            $pending_orders  = 0;
-            $completed_orders= 0;
-            $in_prog_orders  = 0;
-
-            $orders = get_posts(array('post_type'=>'yps_order','posts_per_page'=>-1,'post_status'=>'publish'));
-            foreach ($orders as $o) {
-                $s = get_post_meta($o->ID,'_status',true);
-                if ($s==='pending')       $pending_orders++;
-                if ($s==='in_progress')   $in_prog_orders++;
-                if ($s==='completed')     $completed_orders++;
-            }
-
             $stats = array(
-                array('label'=>'Total Sales',      'value'=>'₱107,850', 'change'=>'+12.5%', 'up'=>true,  'icon'=>'💰'),
-                array('label'=>'Total Orders',     'value'=>max($total_orders, 62), 'change'=>'+8.3%',  'up'=>true,  'icon'=>'📦'),
-                array('label'=>'Completed',        'value'=>max($completed_orders,48), 'change'=>'+5.1%','up'=>true, 'icon'=>'✅'),
-                array('label'=>'In Progress',      'value'=>max($in_prog_orders, 10),  'change'=>'',     'up'=>true,  'icon'=>'⏳'),
+                array('label'=>'Total Sales',  'value'=>yps_format_money($total_sales), 'change'=>$sales_change,  'icon'=>'💰', 'note'=>''),
+                array('label'=>'Total Orders', 'value'=>$total_orders,                  'change'=>$orders_change, 'icon'=>'📦', 'note'=>''),
+                array('label'=>'Completed',    'value'=>$count_by_status['completed'],  'change'=>null,           'icon'=>'✅', 'note'=>''),
+                array('label'=>'In Progress',  'value'=>$count_by_status['in_progress'] + $count_by_status['quality_check'] + $count_by_status['confirmed'],
+                      'change'=>null, 'icon'=>'⏳', 'note'=>$count_by_status['pending'] . ' pending'),
             );
             foreach ($stats as $idx => $stat) : ?>
             <div class="stat-card" id="stat-card-<?php echo $idx+1; ?>">
                 <div class="stat-label"><?php echo $stat['icon']; ?> <?php echo esc_html($stat['label']); ?></div>
                 <div class="stat-value<?php echo $idx===0?' pink':''; ?>"><?php echo esc_html($stat['value']); ?></div>
-                <?php if ($stat['change']) : ?>
-                <div class="stat-change <?php echo $stat['up']?'':'down'; ?>">
-                    <?php echo $stat['up'] ? '↑' : '↓'; ?> <?php echo esc_html($stat['change']); ?> vs last week
+                <?php if ($stat['change'] !== null) : $up = $stat['change'] >= 0; ?>
+                <div class="stat-change <?php echo $up ? '' : 'down'; ?>">
+                    <?php echo $up ? '↑' : '↓'; ?> <?php echo esc_html(abs($stat['change'])); ?>% vs last week
                 </div>
+                <?php elseif ($stat['note']) : ?>
+                <div class="stat-change" style="color:#aaa;"><?php echo esc_html($stat['note']); ?></div>
                 <?php endif; ?>
             </div>
             <?php endforeach; ?>
@@ -113,29 +188,34 @@ if (!current_user_can('manage_options')) {
             <div class="admin-card" id="sales-overview-card">
                 <div class="admin-card-header">
                     <div class="admin-card-title">📈 Sales Overview</div>
-                    <select class="checkout-select" style="padding:6px 12px;font-size:0.8rem;width:auto;" id="chart-period">
-                        <option>Last 7 Days</option>
-                        <option>Last 30 Days</option>
-                        <option>Last 90 Days</option>
+                    <select class="checkout-select" style="padding:6px 12px;font-size:0.8rem;width:auto;" id="chart-period"
+                            onchange="window.location.search='?period='+this.value">
+                        <option value="7"  <?php selected($period, 7); ?>>Last 7 Days</option>
+                        <option value="30" <?php selected($period, 30); ?>>Last 30 Days</option>
+                        <option value="90" <?php selected($period, 90); ?>>Last 90 Days</option>
                     </select>
                 </div>
-                <!-- CSS Bar Chart -->
+                <?php if ($chart_max > 0) : ?>
                 <div class="mini-chart" id="sales-chart" style="height:100px;">
-                    <?php
-                    $chart_data = array(45,60,35,80,55,90,72);
-                    $max = max($chart_data);
-                    foreach ($chart_data as $val) :
-                        $pct = round(($val/$max)*100);
-                    ?>
-                    <div class="chart-bar" style="height:<?php echo $pct; ?>%;" title="₱<?php echo $val * 1000; ?>"></div>
+                    <?php foreach ($chart as $bar) :
+                        $pct = $chart_max > 0 ? max(2, round(($bar['value'] / $chart_max) * 100)) : 2; ?>
+                    <div class="chart-bar" style="height:<?php echo $pct; ?>%;" title="<?php echo esc_attr($bar['label'] . ': ' . yps_format_money($bar['value'])); ?>"></div>
                     <?php endforeach; ?>
                 </div>
                 <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:#aaa;margin-top:6px;">
                     <?php
-                    $days = array('Mon','Tue','Wed','Thu','Fri','Sat','Sun');
-                    foreach ($days as $day) echo '<span>' . $day . '</span>';
+                    // Avoid label clutter on long ranges
+                    $step = count($chart) > 14 ? (int) ceil(count($chart) / 7) : 1;
+                    foreach ($chart as $i => $bar) {
+                        echo '<span>' . ($i % $step === 0 ? esc_html($bar['label']) : '') . '</span>';
+                    }
                     ?>
                 </div>
+                <?php else : ?>
+                <div style="height:120px;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:0.85rem;">
+                    No sales in this period yet.
+                </div>
+                <?php endif; ?>
             </div>
 
             <!-- Top Games by Sales -->
@@ -143,24 +223,25 @@ if (!current_user_can('manage_options')) {
                 <div class="admin-card-header">
                     <div class="admin-card-title">🎮 Top Games by Sales</div>
                 </div>
-                <?php
-                $top_games = array(
-                    array('name'=>'Genshin Impact',    'icon'=>'🌸', 'pct'=>68, 'amount'=>'₱73,338'),
-                    array('name'=>'Honkai: Star Rail',  'icon'=>'⭐', 'pct'=>18, 'amount'=>'₱19,413'),
-                    array('name'=>'Zenless Zone Zero',  'icon'=>'⚡', 'pct'=>9,  'amount'=>'₱9,707'),
-                    array('name'=>'Wuthering Waves',    'icon'=>'🌊', 'pct'=>5,  'amount'=>'₱5,392'),
-                );
-                foreach ($top_games as $g) : ?>
-                <div style="margin-bottom:14px;" id="top-game-<?php echo sanitize_title($g['name']); ?>">
+                <?php if (!empty($sales_by_game) && $total_sales > 0) :
+                    foreach ($sales_by_game as $game_id => $amount) :
+                        $info = yps_get_game_info($game_id);
+                        $pct  = round(($amount / $total_sales) * 100); ?>
+                <div style="margin-bottom:14px;" id="top-game-<?php echo esc_attr($game_id); ?>">
                     <div style="display:flex;justify-content:space-between;font-size:0.82rem;margin-bottom:5px;">
-                        <span style="font-weight:600;"><?php echo $g['icon']; ?> <?php echo esc_html($g['name']); ?></span>
-                        <span style="color:var(--pink);font-weight:700;"><?php echo esc_html($g['amount']); ?></span>
+                        <span style="font-weight:600;"><?php echo $info['icon']; ?> <?php echo esc_html($info['name']); ?></span>
+                        <span style="color:var(--pink);font-weight:700;"><?php echo esc_html(yps_format_money($amount)); ?></span>
                     </div>
                     <div style="height:6px;background:#f0f0f0;border-radius:999px;overflow:hidden;">
-                        <div style="height:100%;width:<?php echo $g['pct']; ?>%;background:linear-gradient(90deg,var(--pink),var(--purple));border-radius:999px;"></div>
+                        <div style="height:100%;width:<?php echo $pct; ?>%;background:linear-gradient(90deg,var(--pink),var(--purple));border-radius:999px;"></div>
                     </div>
                 </div>
-                <?php endforeach; ?>
+                <?php endforeach;
+                else : ?>
+                <div style="height:120px;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:0.85rem;">
+                    No sales yet.
+                </div>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -178,6 +259,7 @@ if (!current_user_can('manage_options')) {
                             <th>Game</th>
                             <th>Service</th>
                             <th>Customer</th>
+                            <th>Amount</th>
                             <th>Assigned Pilot</th>
                             <th>Status</th>
                             <th>Date</th>
@@ -185,83 +267,62 @@ if (!current_user_can('manage_options')) {
                     </thead>
                     <tbody>
                         <?php
-                        // Show real orders from CPT, or demo data
-                        $demo_orders = array(
-                            array('id'=>'YPS#935120A','game'=>'Genshin Impact','service'=>'Daily Commission','amount'=>'₱50','status'=>'completed','date'=>date('M j, Y',strtotime('-1 day'))),
-                            array('id'=>'YPS#935120B','game'=>'Honkai: Star Rail','service'=>'Weekly Bosses','amount'=>'₱80','status'=>'in_progress','date'=>date('M j, Y',strtotime('-2 days'))),
-                            array('id'=>'YPS#935120C','game'=>'Zenless Zone Zero','service'=>'Daily Tasks','amount'=>'₱50','status'=>'completed','date'=>date('M j, Y',strtotime('-3 days'))),
-                            array('id'=>'YPS#935120D','game'=>'Wuthering Waves','service'=>'Event Farming','amount'=>'₱120','status'=>'in_progress','date'=>date('M j, Y',strtotime('-3 days'))),
-                            array('id'=>'YPS#935120E','game'=>'Genshin Impact','service'=>'Spiral Abyss','amount'=>'₱150','status'=>'pending','date'=>date('M j, Y')),
-                            array('id'=>'YPS#935120F','game'=>'Honkai: Star Rail','service'=>'Simulated Universe','amount'=>'₱100','status'=>'completed','date'=>date('M j, Y',strtotime('-4 days'))),
+                        $recent_orders  = array_slice($all_orders, 0, 20);
+                        $pilot_names    = yps_get_pilot_names();
+                        $status_options = array(
+                            'pending'       => 'Pending',
+                            'confirmed'     => 'Confirmed',
+                            'in_progress'   => 'In Progress',
+                            'quality_check' => 'Quality Check',
+                            'completed'     => 'Completed',
+                            'cancelled'     => 'Cancelled',
                         );
 
-                        // Fetch real orders from yps_order CPT
-                        $real_orders = get_posts(array('post_type'=>'yps_order','posts_per_page'=>20,'post_status'=>'publish','orderby'=>'date','order'=>'DESC'));
-                        $pilot_names = yps_get_pilot_names();
-                        if (!empty($real_orders)) {
-                            foreach ($real_orders as $order) {
-                                $order_num = get_post_meta($order->ID, 'yps_order_id', true) ?: get_post_meta($order->ID, '_order_number', true) ?: $order->post_title;
-                                $game      = get_post_meta($order->ID, 'yps_game', true) ?: get_post_meta($order->ID, '_game', true) ?: 'N/A';
-                                $service   = get_post_meta($order->ID, 'yps_service', true) ?: get_post_meta($order->ID, '_service_type', true) ?: 'N/A';
-                                $status    = get_post_meta($order->ID, 'yps_status', true) ?: get_post_meta($order->ID, '_status', true) ?: 'pending';
-                                $customer  = get_post_meta($order->ID, 'yps_customer_name', true) ?: 'Customer';
+                        if (empty($recent_orders)) : ?>
+                        <tr>
+                            <td colspan="8" style="text-align:center;padding:32px;color:#aaa;">
+                                No orders yet. New bookings will appear here automatically.
+                            </td>
+                        </tr>
+                        <?php else :
+                            foreach ($recent_orders as $order) :
+                                $order_num = get_post_meta($order->ID, 'yps_order_id', true) ?: $order->post_title;
+                                $game_id   = get_post_meta($order->ID, 'yps_game', true);
+                                $service   = get_post_meta($order->ID, 'yps_service', true);
+                                $status    = get_post_meta($order->ID, 'yps_status', true) ?: 'pending';
+                                $customer  = get_post_meta($order->ID, 'yps_customer_name', true) ?: '—';
                                 $pilot     = get_post_meta($order->ID, 'yps_pilot', true) ?: 'Unassigned';
-                                
-                                $status_options = array(
-                                    'pending'       => 'Pending',
-                                    'confirmed'     => 'Confirmed',
-                                    'in_progress'   => 'In Progress',
-                                    'quality_check' => 'Quality Check',
-                                    'completed'     => 'Completed',
-                                    'cancelled'     => 'Cancelled'
-                                );
-                                ?>
-                                <tr id="order-row-<?php echo $order->ID; ?>">
-                                    <td style="font-weight:700;color:var(--pink);">
-                                        <a href="<?php echo esc_url(admin_url('post.php?post=' . $order->ID . '&action=edit')); ?>" title="Edit in WP Admin" style="color:inherit;text-decoration:underline;">
-                                            <?php echo esc_html($order_num); ?>
-                                        </a>
-                                    </td>
-                                    <td><?php echo esc_html($game); ?></td>
-                                    <td><?php echo esc_html($service); ?></td>
-                                    <td style="font-weight:600;color:#888;"><?php echo esc_html($customer); ?></td>
-                                    <td>
-                                        <select class="yps-pilot-select" data-order-id="<?php echo $order->ID; ?>" style="padding:4px 8px;border-radius:6px;border:1px solid #ddd;font-size:0.85rem;font-weight:600;background:#fff;cursor:pointer;">
-                                            <option value="Unassigned" <?php selected($pilot, 'Unassigned'); ?>>— Unassigned —</option>
-                                            <?php foreach ($pilot_names as $p_name) : ?>
-                                                <option value="<?php echo esc_attr($p_name); ?>" <?php selected($pilot, $p_name); ?>><?php echo esc_html($p_name); ?></option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <select class="yps-status-select" data-order-id="<?php echo $order->ID; ?>" style="padding:4px 8px;border-radius:6px;border:1px solid #ddd;font-size:0.85rem;font-weight:600;background:#fff;cursor:pointer;">
-                                            <?php foreach ($status_options as $opt_val => $opt_label) : ?>
-                                                <option value="<?php echo esc_attr($opt_val); ?>" <?php selected($status, $opt_val); ?>>
-                                                    <?php echo esc_html($opt_label); ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    </td>
-                                    <td style="color:#aaa;font-size:0.82rem;"><?php echo get_the_date('M j, Y', $order->ID); ?></td>
-                                </tr>
-                                <?php
-                            }
-                        } else {
-                            foreach ($demo_orders as $o) :
-                                $status_cls = array('pending'=>'pending','in_progress'=>'in-progress','completed'=>'completed')[$o['status']] ?? 'pending';
+                                $game_info = yps_get_game_info($game_id);
                             ?>
-                            <tr>
-                                <td style="font-weight:700;color:var(--pink);"><?php echo esc_html($o['id']); ?></td>
-                                <td><?php echo esc_html($o['game']); ?></td>
-                                <td><?php echo esc_html($o['service']); ?></td>
-                                <td style="font-weight:700;"><?php echo esc_html($o['amount']); ?></td>
-                                <td>—</td>
-                                <td><span class="status-pill <?php echo esc_attr($status_cls); ?>"><?php echo esc_html(ucwords(str_replace('_',' ',$o['status']))); ?></span></td>
-                                <td style="color:#aaa;"><?php echo esc_html($o['date']); ?></td>
-                            </tr>
+                        <tr id="order-row-<?php echo $order->ID; ?>">
+                            <td style="font-weight:700;color:var(--pink);">
+                                <a href="<?php echo esc_url(admin_url('post.php?post=' . $order->ID . '&action=edit')); ?>" title="Edit in WP Admin" style="color:inherit;text-decoration:underline;">
+                                    <?php echo esc_html($order_num); ?>
+                                </a>
+                            </td>
+                            <td><?php echo $game_info['icon']; ?> <?php echo esc_html($game_info['name']); ?></td>
+                            <td><?php echo esc_html(yps_get_service_name($game_id, $service)); ?></td>
+                            <td style="font-weight:600;color:#888;"><?php echo esc_html($customer); ?></td>
+                            <td style="font-weight:700;"><?php echo esc_html(yps_format_money(yps_get_order_amount($order->ID))); ?></td>
+                            <td>
+                                <select class="yps-pilot-select" data-order-id="<?php echo $order->ID; ?>" style="padding:4px 8px;border-radius:6px;border:1px solid #ddd;font-size:0.85rem;font-weight:600;background:#fff;cursor:pointer;">
+                                    <option value="Unassigned" <?php selected($pilot, 'Unassigned'); ?>>— Unassigned —</option>
+                                    <?php foreach ($pilot_names as $p_name) : ?>
+                                        <option value="<?php echo esc_attr($p_name); ?>" <?php selected($pilot, $p_name); ?>><?php echo esc_html($p_name); ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </td>
+                            <td>
+                                <select class="yps-status-select" data-order-id="<?php echo $order->ID; ?>" style="padding:4px 8px;border-radius:6px;border:1px solid #ddd;font-size:0.85rem;font-weight:600;background:#fff;cursor:pointer;">
+                                    <?php foreach ($status_options as $opt_val => $opt_label) : ?>
+                                        <option value="<?php echo esc_attr($opt_val); ?>" <?php selected($status, $opt_val); ?>><?php echo esc_html($opt_label); ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </td>
+                            <td style="color:#aaa;font-size:0.82rem;"><?php echo get_the_date('M j, Y', $order->ID); ?></td>
+                        </tr>
                             <?php endforeach;
-                        }
-                        ?>
+                        endif; ?>
                     </tbody>
                 </table>
             </div>
@@ -346,6 +407,33 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
+
+    // Export Recent Orders to CSV
+    const exportBtn = document.getElementById('admin-export-btn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', function() {
+            const rows = document.querySelectorAll('#orders-table tr');
+            const csv = [];
+            rows.forEach(function(row) {
+                const cells = row.querySelectorAll('th, td');
+                if (cells.length < 2) return; // skip "no orders" row
+                const vals = [];
+                cells.forEach(function(cell) {
+                    const sel = cell.querySelector('select');
+                    let text = sel ? sel.options[sel.selectedIndex].text : cell.innerText;
+                    text = text.trim().replace(/"/g, '""');
+                    vals.push('"' + text + '"');
+                });
+                csv.push(vals.join(','));
+            });
+            const blob = new Blob([csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'yps-orders-' + new Date().toISOString().slice(0, 10) + '.csv';
+            a.click();
+            URL.revokeObjectURL(a.href);
+        });
+    }
 });
 </script>
 

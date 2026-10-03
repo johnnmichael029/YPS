@@ -3,6 +3,7 @@
  * YPS Gaming Theme Functions
  */
 // Load MVC & RBAC Modules
+require_once get_template_directory() . '/includes/data/services.php';
 require_once get_template_directory() . '/includes/rbac/Roles.php';
 require_once get_template_directory() . '/includes/models/OrderModel.php';
 require_once get_template_directory() . '/includes/models/UserModel.php';

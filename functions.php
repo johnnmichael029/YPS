@@ -9,6 +9,19 @@ require_once get_template_directory() . '/includes/models/UserModel.php';
 require_once get_template_directory() . '/includes/controllers/OrderController.php';
 require_once get_template_directory() . '/includes/controllers/AuthController.php';
 
+// Automatically load page view templates from pages/ subfolder
+function yps_template_include_pages($template) {
+    if (is_page()) {
+        $page_slug = get_post_field('post_name', get_queried_object_id());
+        $custom_template = get_template_directory() . '/pages/page-' . $page_slug . '.php';
+        if (file_exists($custom_template)) {
+            return $custom_template;
+        }
+    }
+    return $template;
+}
+add_filter('template_include', 'yps_template_include_pages');
+
 // Theme Setup
 function yps_theme_setup() {
     add_theme_support('title-tag');

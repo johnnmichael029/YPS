@@ -37,10 +37,9 @@ foreach ($all_assigned as $o) {
 <div class="yps-container" style="padding: 40px 0;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;margin-top:60px;">
         <div>
-            <div style="font-size:0.8rem;color:#FF6B9D;font-weight:700;text-transform:uppercase;letter-spacing:1px;">
-                👨‍✈️ Pilot Portal</div>
             <h1 style="font-size:1.8rem;font-weight:900;color:#1a1a2e;margin-top:4px;">Welcome back,
-                <?php echo esc_html($pilot_name); ?>! 👋</h1>
+                <?php echo esc_html($pilot_name); ?>! 👋
+            </h1>
         </div>
     </div>
 

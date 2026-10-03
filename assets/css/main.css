@@ -1,4 +1,4 @@
-﻿/* ===================================================
+/* ===================================================
    YPS GAMING THEME - MAIN STYLESHEET
    Color Palette: Pink #FF6B9D | Purple #9B59B6 | Teal #0D2137 | Soft Blue #C8E6F5
    =================================================== */
@@ -1781,10 +1781,16 @@ select {
 /* ===========================
    ADMIN DASHBOARD
    =========================== */
+body.admin-dashboard-page {
+    margin: 0;
+    padding: 0;
+    background: #f0f2f7;
+}
+
 .admin-layout {
     display: flex;
     min-height: 100vh;
-    padding-top: var(--nav-height);
+    padding-top: 0;
     background: #f0f2f7;
 }
 
@@ -1796,10 +1802,20 @@ select {
     flex-direction: column;
     gap: 8px;
     position: fixed;
-    top: var(--nav-height);
+    top: 0;
     left: 0;
     bottom: 0;
     overflow-y: auto;
+    z-index: 100;
+}
+
+body.admin-bar .admin-sidebar {
+    top: 32px;
+}
+@media screen and (max-width: 782px) {
+    body.admin-bar .admin-sidebar {
+        top: 46px;
+    }
 }
 
 .sidebar-section-title {

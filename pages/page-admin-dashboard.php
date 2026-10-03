@@ -2,19 +2,32 @@
 /**
  * Template Name: Admin Dashboard
  * YPS Gaming - Sales & Admin Dashboard Page Template
- * Note: Restrict this page to admins only in production.
  */
-get_header();
+
 if (!is_user_logged_in() || (!current_user_can('manage_options') && !current_user_can('access_admin_dashboard') && !YPS_RBAC::can_manage_orders())) {
     wp_redirect(home_url('/'));
     exit;
 }
 ?>
+<!DOCTYPE html>
+<html <?php language_attributes(); ?>>
+<head>
+    <meta charset="<?php bloginfo('charset'); ?>">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | <?php echo esc_html(get_bloginfo('name')); ?></title>
+    <?php wp_head(); ?>
+</head>
+<body <?php body_class('admin-dashboard-page'); ?>>
 
 <div class="admin-layout" id="admin-layout">
 
     <!-- Sidebar -->
     <aside class="admin-sidebar" id="admin-sidebar" role="navigation" aria-label="Admin Navigation">
+        <div class="sidebar-brand" style="display: flex; align-items: center; gap: 10px; padding: 12px 14px 18px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); margin-bottom: 12px;">
+            <a href="<?php echo esc_url(home_url('/')); ?>" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: #fff; font-weight: 800; font-size: 1.15rem; letter-spacing: 0.5px;">
+                <span style="color: var(--pink); font-size: 1.3rem;">✦</span> YPS.CO
+            </a>
+        </div>
         <div class="sidebar-section-title">Main</div>
         <a href="#" class="sidebar-link active" id="sidebar-dashboard">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
@@ -613,4 +626,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<?php get_footer(); ?>
+<?php wp_footer(); ?>
+</body>
+</html>

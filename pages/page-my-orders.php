@@ -43,7 +43,7 @@ $status_labels = array(
 
     <!-- Page Header -->
     <div
-        style="display: flex; justify-content: space-between; align-items: center; margin-top: 32px; margin-bottom: 32px; flex-wrap: wrap; gap: 16px;">
+        style="display: flex; justify-content: space-between; align-items: center; margin-top: 60px; margin-bottom: 32px; flex-wrap: wrap; gap: 16px;">
         <div>
             <h1 style="font-size: 2rem; font-weight: 900; color: #1a1a2e; margin-top: 4px;">My Boosting Orders</h1>
             <p style="color: #666; font-size: 0.9rem; margin-top: 4px;">Welcome,

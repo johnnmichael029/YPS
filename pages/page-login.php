@@ -94,7 +94,7 @@ add_filter('show_admin_bar', '__return_false');
                 <span style="color:#FF6B9D;" class="text-2xl">✦</span> YPS<span style="color:#FF6B9D;">.CO</span>
             </a>
 
-            <div class="relative z-10 max-w-md">
+            <div class="relative z-10 max-w-md mx-auto my-auto w-full">
                 <h2 class="text-4xl font-black leading-tight mb-4">
                     One portal for the<br>
                     <span style="background:linear-gradient(90deg,#FF6B9D,#C39BD3);-webkit-background-clip:text;background-clip:text;color:transparent;">whole YPS crew.</span>

@@ -268,7 +268,7 @@ add_action('wp_ajax_nopriv_yps_submit_booking', 'yps_submit_booking');
 function yps_update_order_status() {
     check_ajax_referer('yps_nonce', 'nonce');
 
-    if (!current_user_can('manage_options')) {
+    if (!YPS_RBAC::can_manage_orders() && !current_user_can('update_assigned_orders')) {
         wp_send_json_error(array('message' => 'Unauthorized user.'));
     }
 

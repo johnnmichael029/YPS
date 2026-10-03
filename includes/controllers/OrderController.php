@@ -75,12 +75,12 @@ class YPS_Order_Controller {
     }
 
     /**
-     * Update Status Handler (Admin & Pilot RBAC restricted)
+     * Update Status Handler (Admin, Staff & Pilot RBAC restricted)
      */
     public static function handle_update_status() {
         check_ajax_referer('yps_nonce', 'nonce');
 
-        if (!current_user_can('manage_options') && !current_user_can('update_assigned_orders')) {
+        if (!YPS_RBAC::can_manage_orders() && !current_user_can('update_assigned_orders')) {
             wp_send_json_error(array('message' => 'Unauthorized user.'));
         }
 
@@ -100,12 +100,12 @@ class YPS_Order_Controller {
     }
 
     /**
-     * Assign Pilot Handler (Admin only)
+     * Assign Pilot Handler (Admin & Staff Managers)
      */
     public static function handle_assign_pilot() {
         check_ajax_referer('yps_nonce', 'nonce');
 
-        if (!current_user_can('manage_options')) {
+        if (!YPS_RBAC::can_manage_orders() && !current_user_can('assign_yps_pilots')) {
             wp_send_json_error(array('message' => 'Unauthorized user.'));
         }
 

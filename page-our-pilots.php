@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Template Name: Our Pilots Page
  * YPS Gaming - Pilots Directory Page Template
@@ -49,13 +49,14 @@ get_header();
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:28px;margin-top:48px;" id="pilots-grid">
         <?php
         $pilots = array(
-            array('handle'=>'Pilot_Rei',  'initial'=>'R','color'=>'linear-gradient(135deg,#FF6B9D,#9B59B6)','spec'=>'Genshin Impact Expert',       'badge'=>'#FF6B9D','games'=>array('Genshin Impact','Honkai: Star Rail'),'orders'=>128,'desc'=>'Top-ranked pilot specializing in daily commissions, Spiral Abyss, and artifact farming.'),
-            array('handle'=>'Pilot_Kira', 'initial'=>'K','color'=>'linear-gradient(135deg,#9B59B6,#3498DB)','spec'=>'Honkai Star Rail Pro',          'badge'=>'#9B59B6','games'=>array('Honkai: Star Rail','Zenless Zone Zero'),'orders'=>94, 'desc'=>'Specialist in Memory of Chaos clears, Trailblazer leveling, and Simulated Universe runs.'),
-            array('handle'=>'Pilot_Zara', 'initial'=>'Z','color'=>'linear-gradient(135deg,#00BCD4,#3F51B5)','spec'=>'Zenless Zone Zero Expert',      'badge'=>'#00BCD4','games'=>array('Zenless Zone Zero'),                  'orders'=>76, 'desc'=>'Expert in Hollow Zero, drive disc farming, and InterKnot level progression.'),
-            array('handle'=>'Pilot_Lux',  'initial'=>'L','color'=>'linear-gradient(135deg,#4CAF50,#00BCD4)','spec'=>'Wuthering Waves Expert',        'badge'=>'#4CAF50','games'=>array('Wuthering Waves','Neverness to Everness'),'orders'=>61,'desc'=>'Veteran pilot focused on Tower of Adversity clears and echo farming.'),
-            array('handle'=>'Pilot_Nova', 'initial'=>'N','color'=>'linear-gradient(135deg,#FF9800,#FF6B9D)','spec'=>'Multi-Game Specialist',         'badge'=>'#FF9800','games'=>array('Genshin Impact','ZZZ','HSR'),          'orders'=>55, 'desc'=>'Versatile pilot covering multiple games — perfect for multi-title players.'),
-            array('handle'=>'Pilot_Ace',  'initial'=>'A','color'=>'linear-gradient(135deg,#F44336,#9B59B6)','spec'=>'Rank Leveling Specialist',      'badge'=>'#F44336','games'=>array('Genshin Impact','HSR','ZZZ'),           'orders'=>47, 'desc'=>'Ranked boost expert with proven results across competitive modes.'),
-            array('handle'=>'Pilot_Mika', 'initial'=>'M','color'=>'linear-gradient(135deg,#E91E63,#3F51B5)','spec'=>'Events & Quests Expert',        'badge'=>'#E91E63','games'=>array('Arknight Endfields','Neverness to Everness'),'orders'=>39,'desc'=>'Focused on limited-time events and quests so you never miss exclusive rewards.'),
+            array('handle'=>'Yuna',      'initial'=>'Y','color'=>'linear-gradient(135deg,#FF6B9D,#9B59B6)','spec'=>'Genshin Impact Expert',       'badge'=>'#FF6B9D','games'=>array('Genshin Impact','Honkai: Star Rail'),'orders'=>142,'desc'=>'Top-ranked pilot specializing in Account Maintenance, Primohunts, and Character Ascension.'),
+            array('handle'=>'Yulia',     'initial'=>'Y','color'=>'linear-gradient(135deg,#9B59B6,#3498DB)','spec'=>'Honkai Star Rail Pro',          'badge'=>'#9B59B6','games'=>array('Honkai: Star Rail','Zenless Zone Zero'),'orders'=>118,'desc'=>'Specialist in Stellar Jade Farming, Trailblazer leveling, and Memory of Chaos clears.'),
+            array('handle'=>'Anastasya', 'initial'=>'A','color'=>'linear-gradient(135deg,#00BCD4,#3F51B5)','spec'=>'Wuthering Waves Specialist',  'badge'=>'#00BCD4','games'=>array('Wuthering Waves','Genshin Impact'),   'orders'=>98, 'desc'=>'Expert in Astrites Hunting, Tower of Adversity clears, and Echo farming.'),
+            array('handle'=>'Fruenah',   'initial'=>'F','color'=>'linear-gradient(135deg,#4CAF50,#00BCD4)','spec'=>'Quests & Exploration Pro',    'badge'=>'#4CAF50','games'=>array('Genshin Impact','Wuthering Waves'),   'orders'=>84, 'desc'=>'Veteran pilot focused on full map exploration, quests, and resource gathering.'),
+            array('handle'=>'April',     'initial'=>'A','color'=>'linear-gradient(135deg,#FF9800,#FF6B9D)','spec'=>'Multi-Game Specialist',         'badge'=>'#FF9800','games'=>array('Genshin Impact','ZZZ','HSR'),          'orders'=>79, 'desc'=>'Versatile pilot covering multiple titles — fast turnarounds and high efficiency.'),
+            array('handle'=>'Uno',       'initial'=>'U','color'=>'linear-gradient(135deg,#F44336,#9B59B6)','spec'=>'Rank Leveling Expert',         'badge'=>'#F44336','games'=>array('Genshin Impact','HSR','ZZZ'),           'orders'=>65, 'desc'=>'Adventure Rank and InterKnot leveling specialist with proven 100% success rate.'),
+            array('handle'=>'Chanelia',  'initial'=>'C','color'=>'linear-gradient(135deg,#E91E63,#3F51B5)','spec'=>'Events & Maintenance Pro',     'badge'=>'#E91E63','games'=>array('Genshin Impact','Honkai: Star Rail'),'orders'=>58,'desc'=>'Dedicated to daily maintenance, patch tasks, and limited-time events.'),
+            array('handle'=>'Bonnie',    'initial'=>'B','color'=>'linear-gradient(135deg,#673AB7,#009688)','spec'=>'Combat & Bosses Specialist',   'badge'=>'#673AB7','games'=>array('Zenless Zone Zero','Wuthering Waves'),'orders'=>51,'desc'=>'Combat challenge specialist for Hollow Zero, weekly bosses, and end-game clears.'),
         );
         foreach ($pilots as $idx => $pilot) : ?>
             <div class="fade-up" style="background:white;border-radius:24px;padding:28px;box-shadow:0 4px 24px rgba(0,0,0,0.07);display:flex;flex-direction:column;align-items:center;text-align:center;transition:all 0.3s ease;"

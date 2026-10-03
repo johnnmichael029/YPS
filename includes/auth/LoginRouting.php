@@ -92,6 +92,7 @@ class YPS_Login_Routing {
 
     /** Create the /login and /my-orders pages once if they don't exist. Template is auto-mapped by slug. */
     public static function ensure_pages() {
+        $created = false;
         if (!get_page_by_path(self::LOGIN_SLUG)) {
             wp_insert_post(array(
                 'post_type'   => 'page',
@@ -99,6 +100,7 @@ class YPS_Login_Routing {
                 'post_name'   => self::LOGIN_SLUG,
                 'post_status' => 'publish',
             ));
+            $created = true;
         }
 
         if (!get_page_by_path('my-orders')) {
@@ -108,6 +110,11 @@ class YPS_Login_Routing {
                 'post_name'   => 'my-orders',
                 'post_status' => 'publish',
             ));
+            $created = true;
+        }
+
+        if ($created) {
+            flush_rewrite_rules();
         }
 
         update_option('yps_login_page_created', 1);

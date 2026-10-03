@@ -22,6 +22,18 @@ function yps_template_include_pages($template) {
 }
 add_filter('template_include', 'yps_template_include_pages');
 
+// Pilot roster used for order assignment (core team + users with the yps_pilot role)
+function yps_get_pilot_names() {
+    $names = array('Yuna', 'Yulia', 'Anastasya', 'Fruenah', 'April', 'Uno', 'Chanelia', 'Bonnie');
+    $pilot_users = get_users(array('role' => 'yps_pilot', 'fields' => array('display_name')));
+    foreach ($pilot_users as $u) {
+        if (!empty($u->display_name) && !in_array($u->display_name, $names, true)) {
+            $names[] = $u->display_name;
+        }
+    }
+    return $names;
+}
+
 // Theme Setup
 function yps_theme_setup() {
     add_theme_support('title-tag');

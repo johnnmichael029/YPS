@@ -16,6 +16,8 @@ class YPS_Order_Controller {
         add_action('wp_ajax_nopriv_yps_track_order', array(__CLASS__, 'handle_track_order'));
 
         add_action('wp_ajax_yps_update_order_status', array(__CLASS__, 'handle_update_status'));
+
+        add_action('wp_ajax_yps_assign_pilot', array(__CLASS__, 'handle_assign_pilot'));
     }
 
     /**
@@ -88,6 +90,44 @@ class YPS_Order_Controller {
         } else {
             wp_send_json_error(array('message' => 'Invalid parameters.'));
         }
+    }
+
+    /**
+     * Assign Pilot Handler (Admin only)
+     */
+    public static function handle_assign_pilot() {
+        check_ajax_referer('yps_nonce', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'Unauthorized user.'));
+        }
+
+        $post_id = intval($_POST['post_id'] ?? 0);
+        $pilot   = sanitize_text_field($_POST['pilot'] ?? '');
+
+        if ($post_id <= 0 || get_post_type($post_id) !== 'yps_order') {
+            wp_send_json_error(array('message' => 'Invalid order.'));
+        }
+
+        $valid = array_merge(array('Unassigned'), yps_get_pilot_names());
+        if (!in_array($pilot, $valid, true)) {
+            wp_send_json_error(array('message' => 'Unknown pilot.'));
+        }
+
+        YPS_Order_Model::assign_pilot($post_id, $pilot);
+
+        // Assigning a pilot to a pending order confirms it
+        $status = get_post_meta($post_id, 'yps_status', true) ?: 'pending';
+        if ($pilot !== 'Unassigned' && $status === 'pending') {
+            YPS_Order_Model::update_status($post_id, 'confirmed');
+            $status = 'confirmed';
+        }
+
+        wp_send_json_success(array(
+            'message' => 'Pilot assigned.',
+            'pilot'   => $pilot,
+            'status'  => $status,
+        ));
     }
 }
 

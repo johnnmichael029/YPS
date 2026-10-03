@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Status badge
                     const statusMap = {
                         'pending'       : { label: 'Pending Pilot',  cls: 'pending' },
-                        'confirmed'     : { label: 'Pilot Assigned', cls: 'in-progress' },
+                        'confirmed'     : { label: 'Confirmed',      cls: 'in-progress' },
                         'in_progress'   : { label: 'In Progress',    cls: 'in-progress' },
                         'quality_check' : { label: 'Quality Check',  cls: 'in-progress' },
                         'completed'     : { label: 'Completed',      cls: 'completed' },
@@ -182,7 +182,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         'completed'     : 4,
                         'cancelled'     : 1,
                     };
-                    const activeStage = stagesMap[d.status] || 1;
+                    let activeStage = stagesMap[d.status] || 1;
+                    const hasPilot = d.pilot && d.pilot !== 'Unassigned';
+                    if (hasPilot && activeStage < 2) activeStage = 2;
+                    if (!hasPilot && activeStage === 2) activeStage = 1;
                     steps.forEach(function(id, i) {
                         const el = document.getElementById(id);
                         el.classList.remove('done','active');

@@ -177,7 +177,8 @@ if (!current_user_can('manage_options')) {
                             <th>Order ID</th>
                             <th>Game</th>
                             <th>Service</th>
-                            <th>Amount</th>
+                            <th>Customer</th>
+                            <th>Assigned Pilot</th>
                             <th>Status</th>
                             <th>Date</th>
                         </tr>
@@ -196,6 +197,7 @@ if (!current_user_can('manage_options')) {
 
                         // Fetch real orders from yps_order CPT
                         $real_orders = get_posts(array('post_type'=>'yps_order','posts_per_page'=>20,'post_status'=>'publish','orderby'=>'date','order'=>'DESC'));
+                        $pilot_names = yps_get_pilot_names();
                         if (!empty($real_orders)) {
                             foreach ($real_orders as $order) {
                                 $order_num = get_post_meta($order->ID, 'yps_order_id', true) ?: get_post_meta($order->ID, '_order_number', true) ?: $order->post_title;
@@ -203,6 +205,7 @@ if (!current_user_can('manage_options')) {
                                 $service   = get_post_meta($order->ID, 'yps_service', true) ?: get_post_meta($order->ID, '_service_type', true) ?: 'N/A';
                                 $status    = get_post_meta($order->ID, 'yps_status', true) ?: get_post_meta($order->ID, '_status', true) ?: 'pending';
                                 $customer  = get_post_meta($order->ID, 'yps_customer_name', true) ?: 'Customer';
+                                $pilot     = get_post_meta($order->ID, 'yps_pilot', true) ?: 'Unassigned';
                                 
                                 $status_options = array(
                                     'pending'       => 'Pending',
@@ -222,6 +225,14 @@ if (!current_user_can('manage_options')) {
                                     <td><?php echo esc_html($game); ?></td>
                                     <td><?php echo esc_html($service); ?></td>
                                     <td style="font-weight:600;color:#888;"><?php echo esc_html($customer); ?></td>
+                                    <td>
+                                        <select class="yps-pilot-select" data-order-id="<?php echo $order->ID; ?>" style="padding:4px 8px;border-radius:6px;border:1px solid #ddd;font-size:0.85rem;font-weight:600;background:#fff;cursor:pointer;">
+                                            <option value="Unassigned" <?php selected($pilot, 'Unassigned'); ?>>— Unassigned —</option>
+                                            <?php foreach ($pilot_names as $p_name) : ?>
+                                                <option value="<?php echo esc_attr($p_name); ?>" <?php selected($pilot, $p_name); ?>><?php echo esc_html($p_name); ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </td>
                                     <td>
                                         <select class="yps-status-select" data-order-id="<?php echo $order->ID; ?>" style="padding:4px 8px;border-radius:6px;border:1px solid #ddd;font-size:0.85rem;font-weight:600;background:#fff;cursor:pointer;">
                                             <?php foreach ($status_options as $opt_val => $opt_label) : ?>
@@ -244,6 +255,7 @@ if (!current_user_can('manage_options')) {
                                 <td><?php echo esc_html($o['game']); ?></td>
                                 <td><?php echo esc_html($o['service']); ?></td>
                                 <td style="font-weight:700;"><?php echo esc_html($o['amount']); ?></td>
+                                <td>—</td>
                                 <td><span class="status-pill <?php echo esc_attr($status_cls); ?>"><?php echo esc_html(ucwords(str_replace('_',' ',$o['status']))); ?></span></td>
                                 <td style="color:#aaa;"><?php echo esc_html($o['date']); ?></td>
                             </tr>
@@ -292,6 +304,42 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .catch(err => {
+                this.disabled = false;
+                alert('Connection error.');
+                this.style.backgroundColor = '#f8d7da';
+            });
+        });
+    });
+
+    // Assign pilot
+    document.querySelectorAll('.yps-pilot-select').forEach(function(select) {
+        select.addEventListener('change', function() {
+            const orderId = this.dataset.orderId;
+            this.disabled = true;
+            this.style.backgroundColor = '#fff9c4';
+
+            const formData = new FormData();
+            formData.append('action', 'yps_assign_pilot');
+            formData.append('nonce', yps_ajax.nonce);
+            formData.append('post_id', orderId);
+            formData.append('pilot', this.value);
+
+            fetch(yps_ajax.ajax_url, { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(data => {
+                this.disabled = false;
+                if (data.success) {
+                    this.style.backgroundColor = '#d4edda';
+                    setTimeout(() => { this.style.backgroundColor = '#fff'; }, 1500);
+                    // Reflect auto-confirmed status
+                    const statusSel = document.querySelector('.yps-status-select[data-order-id="' + orderId + '"]');
+                    if (statusSel && data.data.status) statusSel.value = data.data.status;
+                } else {
+                    alert((data.data && data.data.message) || 'Error assigning pilot.');
+                    this.style.backgroundColor = '#f8d7da';
+                }
+            })
+            .catch(() => {
                 this.disabled = false;
                 alert('Connection error.');
                 this.style.backgroundColor = '#f8d7da';

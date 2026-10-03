@@ -461,7 +461,7 @@ select {
 .hero-badge-dot {
     width: 6px;
     height: 6px;
-    background: var(--pink);
+    background: var(--off-white);
     border-radius: 50%;
     animation: pulse-dot 1.5s infinite;
 }

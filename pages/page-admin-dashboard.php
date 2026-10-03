@@ -286,13 +286,16 @@ if (!current_user_can('manage_options')) {
                         </tr>
                         <?php else :
                             foreach ($recent_orders as $order) :
-                                $order_num = get_post_meta($order->ID, 'yps_order_id', true) ?: $order->post_title;
-                                $game_id   = get_post_meta($order->ID, 'yps_game', true);
-                                $service   = get_post_meta($order->ID, 'yps_service', true);
-                                $status    = get_post_meta($order->ID, 'yps_status', true) ?: 'pending';
-                                $customer  = get_post_meta($order->ID, 'yps_customer_name', true) ?: '—';
-                                $pilot     = get_post_meta($order->ID, 'yps_pilot', true) ?: 'Unassigned';
-                                $game_info = yps_get_game_info($game_id);
+                                $order_num   = get_post_meta($order->ID, 'yps_order_id', true) ?: $order->post_title;
+                                $game_id     = get_post_meta($order->ID, 'yps_game', true);
+                                $service     = get_post_meta($order->ID, 'yps_service', true);
+                                $status      = get_post_meta($order->ID, 'yps_status', true) ?: 'pending';
+                                $customer    = get_post_meta($order->ID, 'yps_customer_name', true) ?: '—';
+                                $pilot       = get_post_meta($order->ID, 'yps_pilot', true) ?: 'Unassigned';
+                                $game_info   = yps_get_game_info($game_id);
+                                $needs_quote = get_post_meta($order->ID, 'yps_needs_quote', true);
+                                $progress    = get_post_meta($order->ID, 'yps_current_progress', true);
+                                $amount      = yps_get_order_amount($order->ID);
                             ?>
                         <tr id="order-row-<?php echo $order->ID; ?>">
                             <td style="font-weight:700;color:var(--pink);">
@@ -301,9 +304,22 @@ if (!current_user_can('manage_options')) {
                                 </a>
                             </td>
                             <td><?php echo $game_info['icon']; ?> <?php echo esc_html($game_info['name']); ?></td>
-                            <td><?php echo esc_html(yps_get_service_name($game_id, $service)); ?></td>
+                            <td>
+                                <div><?php echo esc_html(yps_get_service_name($game_id, $service)); ?></div>
+                                <?php if (!empty($progress)) : ?>
+                                <div style="font-size:0.75rem;color:#9333ea;font-weight:600;margin-top:2px;">
+                                    🎯 <?php echo esc_html($progress); ?>
+                                </div>
+                                <?php endif; ?>
+                            </td>
                             <td style="font-weight:600;color:#888;"><?php echo esc_html($customer); ?></td>
-                            <td style="font-weight:700;"><?php echo esc_html(yps_format_money(yps_get_order_amount($order->ID))); ?></td>
+                            <td style="font-weight:700;">
+                                <?php if ($needs_quote && $amount <= 0) : ?>
+                                    <span style="color:#d946ef;font-weight:800;font-size:0.75rem;background:#fdf4ff;padding:2px 8px;border-radius:6px;border:1px solid #f5d0fe;display:inline-block;">📋 Quote Needed</span>
+                                <?php else : ?>
+                                    <?php echo esc_html(yps_format_money($amount)); ?>
+                                <?php endif; ?>
+                            </td>
                             <td>
                                 <select class="yps-pilot-select" data-order-id="<?php echo $order->ID; ?>" style="padding:4px 8px;border-radius:6px;border:1px solid #ddd;font-size:0.85rem;font-weight:600;background:#fff;cursor:pointer;">
                                     <option value="Unassigned" <?php selected($pilot, 'Unassigned'); ?>>— Unassigned —</option>

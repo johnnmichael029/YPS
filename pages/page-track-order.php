@@ -95,6 +95,10 @@ get_header();
                             <div class="order-detail-label">Est. Completion</div>
                             <div class="order-detail-value" id="result-est">—</div>
                         </div>
+                        <div class="order-detail-item" id="result-progress-row" style="display:none;grid-column:1/-1;">
+                            <div class="order-detail-label">Submitted Exploration / Progress Note</div>
+                            <div class="order-detail-value" id="result-progress" style="color:#9333ea;font-weight:700;">—</div>
+                        </div>
                         <div class="order-detail-item" style="grid-column:1/-1;">
                             <div class="order-detail-label">Current Status</div>
                             <div id="result-status-badge" style="margin-top:4px;"></div>
@@ -159,6 +163,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.getElementById('result-pilot').textContent     = d.pilot;
                     document.getElementById('result-est').textContent       = d.est_completion;
 
+                    if (d.current_progress) {
+                        document.getElementById('result-progress').textContent = d.current_progress;
+                        document.getElementById('result-progress-row').style.display = 'block';
+                    } else {
+                        document.getElementById('result-progress-row').style.display = 'none';
+                    }
+
                     // Status badge
                     const statusMap = {
                         'pending'       : { label: 'Pending Pilot',  cls: 'pending' },
@@ -169,8 +180,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         'cancelled'     : { label: 'Cancelled',      cls: 'pending' },
                     };
                     const st = statusMap[d.status] || { label: d.status || 'Pending', cls: 'pending' };
-                    document.getElementById('result-status-badge').innerHTML =
-                        '<span class="status-pill ' + st.cls + '">' + st.label + '</span>';
+                    let badgeHtml = '<span class="status-pill ' + st.cls + '">' + st.label + '</span>';
+                    if (d.needs_quote && (!d.amount || parseFloat(d.amount) <= 0)) {
+                        badgeHtml += ' <span class="status-pill pending" style="background:#fdf4ff;color:#c084fc;border:1px solid #f5d0fe;margin-left:6px;">📋 Quote Pending Verification</span>';
+                    }
+                    document.getElementById('result-status-badge').innerHTML = badgeHtml;
 
                     // Update status steps
                     const steps = ['sstep-placed','sstep-assigned','sstep-progress','sstep-completed'];

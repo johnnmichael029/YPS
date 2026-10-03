@@ -52,15 +52,22 @@ class YPS_Order_Controller {
         $order = YPS_Order_Model::get_order_by_number($order_id);
 
         if ($order) {
-            $post_id = $order->ID;
+            $post_id     = $order->ID;
+            $needs_quote = get_post_meta($post_id, 'yps_needs_quote', true);
+            $amount      = get_post_meta($post_id, 'yps_amount', true);
+            $progress    = get_post_meta($post_id, 'yps_current_progress', true);
+
             wp_send_json_success(array(
-                'order_id'       => get_post_meta($post_id, 'yps_order_id', true),
-                'game'           => get_post_meta($post_id, 'yps_game', true),
-                'service'        => get_post_meta($post_id, 'yps_service', true),
-                'pilot'          => get_post_meta($post_id, 'yps_pilot', true),
-                'status'         => get_post_meta($post_id, 'yps_status', true),
-                'start_date'     => get_post_meta($post_id, 'yps_start_date', true),
-                'est_completion' => get_post_meta($post_id, 'yps_est_completion', true),
+                'order_id'         => get_post_meta($post_id, 'yps_order_id', true),
+                'game'             => get_post_meta($post_id, 'yps_game', true),
+                'service'          => get_post_meta($post_id, 'yps_service', true),
+                'pilot'            => get_post_meta($post_id, 'yps_pilot', true),
+                'status'           => get_post_meta($post_id, 'yps_status', true),
+                'start_date'       => get_post_meta($post_id, 'yps_start_date', true),
+                'est_completion'   => get_post_meta($post_id, 'yps_est_completion', true),
+                'needs_quote'      => $needs_quote,
+                'amount'           => $amount,
+                'current_progress' => $progress,
             ));
         } else {
             wp_send_json_error(array('message' => 'Order not found. Please check your Order ID.'));

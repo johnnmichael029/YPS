@@ -77,6 +77,13 @@ get_header();
                             📌 <span id="category-note-text"></span>
                         </div>
 
+                        <!-- Dynamic Current Exploration / Progress Input (for Quote Services) -->
+                        <div class="form-group" id="service-progress-box" style="display:none;background:#fdf4ff;border:1px solid #f5d0fe;padding:14px;border-radius:10px;margin-bottom:16px;">
+                            <label class="form-label" for="co-progress" style="color:#86198f;font-weight:700;">Current Progress / Exploration % *</label>
+                            <input type="text" class="form-input" id="co-progress" name="current_progress" placeholder="e.g. Currently 30% exploration, target is 100%">
+                            <div style="font-size:0.78rem;color:#a21caf;margin-top:6px;">Our staff &amp; pilots will verify your current progress/resources to calculate your final custom quote.</div>
+                        </div>
+
                         <!-- Dynamic Quantity Input (for per-unit services like AR levels, ranks, 10-pulls) -->
                         <div class="form-group" id="service-qty-box" style="display:none;">
                             <label class="form-label" for="co-quantity" id="co-qty-label">Quantity *</label>
@@ -139,7 +146,7 @@ get_header();
                                 password after the service is completed. Account safety is guaranteed.</span>
                         </div>
                         <div class="form-group">
-                            <label class="form-label" for="co-payment">Payment Method *</label>
+                            <label class="form-label" for="co-payment">Preferred Payment Method *</label>
                             <select class="checkout-select" id="co-payment" name="payment" required>
                                 <option value="">— Select payment method —</option>
                                 <option value="gcash">💚 GCash</option>
@@ -165,9 +172,9 @@ get_header();
                 <!-- STEP 3: Confirmation -->
                 <div class="checkout-form-card" id="step-3-card" style="display:none;">
                     <div class="checkout-confirmation" id="checkout-confirmation">
-                        <div class="confirmation-icon">🎉</div>
-                        <h2 class="confirmation-title">Thank you for trusting YPS! 💖</h2>
-                        <p class="confirmation-subtitle">Your order has been received. A pilot will be assigned shortly!
+                        <div class="confirmation-icon" id="confirm-icon">🎉</div>
+                        <h2 class="confirmation-title" id="confirm-title">Thank you for trusting YPS! 💖</h2>
+                        <p class="confirmation-subtitle" id="confirm-subtitle">Your order has been received. A pilot will be assigned shortly!
                         </p>
                         <div class="order-id-box" id="confirm-order-id" style="cursor:pointer;position:relative;" title="Click to copy Order ID">YPS——</div>
                         <div id="copy-badge" style="display:none;color:#10b981;font-weight:700;font-size:0.85rem;margin-top:-16px;margin-bottom:16px;">
@@ -258,12 +265,15 @@ get_header();
         const serviceSelect = document.getElementById('co-service');
         const noteBox       = document.getElementById('category-note-box');
         const noteText      = document.getElementById('category-note-text');
+        const progressBox   = document.getElementById('service-progress-box');
+        const progressInput = document.getElementById('co-progress');
         const qtyBox        = document.getElementById('service-qty-box');
         const qtyInput      = document.getElementById('co-quantity');
         const qtyLabel      = document.getElementById('co-qty-label');
         const addonBox      = document.getElementById('category-addon-box');
         const addonCheck    = document.getElementById('co-addon');
         const addonText     = document.getElementById('category-addon-text');
+        const nextStep2Btn  = document.getElementById('next-step-2');
 
         const summaryServiceRow  = document.getElementById('summary-service-row');
         const summaryServiceName = document.getElementById('summary-service-name');
@@ -323,6 +333,7 @@ get_header();
 
             if (!found) {
                 noteBox.style.display = 'none';
+                progressBox.style.display = 'none';
                 qtyBox.style.display = 'none';
                 addonBox.style.display = 'none';
                 addonCheck.checked = false;
@@ -343,8 +354,18 @@ get_header();
                 noteBox.style.display = 'none';
             }
 
-            // 2. Quantity (if per unit like level/rank/10-pull)
-            if (item.unit) {
+            // 2. Quote Service Progress Box & Button Label
+            const isQuote = (item.price === null);
+            if (isQuote) {
+                progressBox.style.display = 'block';
+                nextStep2Btn.textContent = 'Submit Quote Request →';
+            } else {
+                progressBox.style.display = 'none';
+                nextStep2Btn.textContent = 'Proceed to Payment →';
+            }
+
+            // 3. Quantity (if per unit like level/rank/10-pull)
+            if (item.unit && !isQuote) {
                 qtyLabel.textContent = 'Number of ' + item.unit.charAt(0).toUpperCase() + item.unit.slice(1) + 's *';
                 qtyBox.style.display = 'block';
             } else {
@@ -352,7 +373,7 @@ get_header();
                 qtyInput.value = '1';
             }
 
-            // 3. Category Add-on
+            // 4. Category Add-on
             if (category.addon) {
                 addonText.innerHTML = 'Add <strong>' + category.addon.name + '</strong> (+$' + category.addon.price.toFixed(2) + ')';
                 addonBox.style.display = 'block';
@@ -361,13 +382,13 @@ get_header();
                 addonCheck.checked = false;
             }
 
-            // 4. Calculate Summary Total
+            // 5. Calculate Summary Total
             let basePrice = item.price;
             if (basePrice === null) {
                 // Quote service
                 summaryServiceName.textContent = item.name;
-                summaryServicePrice.textContent = 'Quote on request';
-                summaryTotalPrice.textContent = 'Quote on request';
+                summaryServicePrice.textContent = 'Quote required';
+                summaryTotalPrice.textContent = 'Quote required';
                 summaryServiceRow.style.display = 'flex';
                 summaryTotalRow.style.display = 'flex';
                 summaryEmptyMsg.style.display = 'none';
@@ -435,6 +456,12 @@ get_header();
                 errDiv.style.display = 'block';
                 return;
             }
+            const found = findService(game, service);
+            if (found && found.item.price === null && !progressInput.value.trim()) {
+                errDiv.textContent = 'Please specify your current progress or exploration % (e.g. 30% exploration).';
+                errDiv.style.display = 'block';
+                return;
+            }
             errDiv.style.display = 'none';
             goToStep(2);
         });
@@ -448,6 +475,7 @@ get_header();
             const pass = document.getElementById('co-game-pass').value.trim();
             const pay = document.getElementById('co-payment').value;
             const notes = document.getElementById('co-notes').value.trim();
+            const progress = progressInput.value.trim();
             const qty = qtyInput.value || '1';
             const addon = addonCheck.checked ? '1' : '0';
             const errDiv = document.getElementById('step2-error');
@@ -459,8 +487,11 @@ get_header();
             }
             errDiv.style.display = 'none';
 
+            const found = findService(gameSelect.value, serviceSelect.value);
+            const isQuote = (found && found.item.price === null);
+
             const btn = document.getElementById('next-step-2');
-            btn.innerHTML = '<div class="yps-spinner"></div> Processing...';
+            btn.innerHTML = '<div class="yps-spinner"></div> Submitting...';
             btn.disabled = true;
 
             // AJAX Submit
@@ -472,13 +503,14 @@ get_header();
             fd.append('quantity', qty);
             fd.append('addon', addon);
             fd.append('notes', notes);
+            fd.append('current_progress', progress);
             fd.append('name', name);
             fd.append('email', email);
 
             fetch(yps_ajax.ajax_url, { method: 'POST', body: fd })
                 .then(r => r.json())
                 .then(function (data) {
-                    btn.innerHTML = 'Proceed to Payment →';
+                    btn.innerHTML = isQuote ? 'Submit Quote Request →' : 'Proceed to Payment →';
                     btn.disabled = false;
                     const orderId = (data.success && data.data.order_id) ? data.data.order_id : 'YPS' + Math.random().toString(36).substr(2, 8).toUpperCase();
                     
@@ -488,6 +520,16 @@ get_header();
                     
                     confirmBox.textContent = orderId;
                     trackBtn.href = '<?php echo esc_url(home_url('/track-order')); ?>?order_id=' + orderId;
+
+                    if (isQuote) {
+                        document.getElementById('confirm-icon').textContent = '📋';
+                        document.getElementById('confirm-title').textContent = 'Thank you for your Quote Request! 💖';
+                        document.getElementById('confirm-subtitle').textContent = 'Your order request has been received! Our pilots will inspect your current exploration/resources and send your final custom quote shortly.';
+                    } else {
+                        document.getElementById('confirm-icon').textContent = '🎉';
+                        document.getElementById('confirm-title').textContent = 'Thank you for trusting YPS! 💖';
+                        document.getElementById('confirm-subtitle').textContent = 'Your order has been received. A pilot will be assigned shortly!';
+                    }
 
                     function copyOrderIdToClipboard() {
                         if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -514,7 +556,7 @@ get_header();
                     goToStep(3);
                 })
                 .catch(function () {
-                    btn.innerHTML = 'Proceed to Payment →';
+                    btn.innerHTML = isQuote ? 'Submit Quote Request →' : 'Proceed to Payment →';
                     btn.disabled = false;
                     // Fallback: show confirmation anyway
                     const orderId = 'YPS' + Math.random().toString(36).substr(2, 8).toUpperCase();

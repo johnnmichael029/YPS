@@ -31,11 +31,11 @@ class YPS_User_Model {
     /**
      * Authenticate user credentials
      */
-    public static function login_user($username_or_email, $password) {
+    public static function login_user($username_or_email, $password, $remember = true) {
         $creds = array(
             'user_login'    => $username_or_email,
             'user_password' => $password,
-            'remember'      => true,
+            'remember'      => (bool) $remember,
         );
 
         return wp_signon($creds, is_ssl());

@@ -45,10 +45,16 @@
                 <a href="<?php echo esc_url(home_url('/track-order')); ?>" class="nav-icon-btn" id="nav-search-btn" title="Track Order" aria-label="Track Order">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                 </a>
-                <?php if (is_user_logged_in()) : ?>
-                    <a href="<?php echo esc_url(admin_url()); ?>" class="yps-btn-login" id="nav-login-btn">Dashboard</a>
+                <?php if (is_user_logged_in()) :
+                    $yps_home  = YPS_Login_Routing::role_home_url();
+                    $yps_label = (current_user_can('access_admin_dashboard') || YPS_RBAC::has_role(get_current_user_id(), 'yps_pilot')) ? 'Dashboard' : 'My Orders';
+                ?>
+                    <a href="<?php echo esc_url($yps_home); ?>" class="yps-btn-login" id="nav-login-btn"><?php echo esc_html($yps_label); ?></a>
+                    <a href="<?php echo esc_url(wp_logout_url()); ?>" class="nav-icon-btn" id="nav-logout-btn" title="Logout" aria-label="Logout">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    </a>
                 <?php else : ?>
-                    <a href="<?php echo esc_url(wp_login_url()); ?>" class="yps-btn-login" id="nav-login-btn">Login / Sign Up</a>
+                    <a href="<?php echo esc_url(YPS_Login_Routing::login_page_url()); ?>" class="yps-btn-login" id="nav-login-btn">Login / Sign Up</a>
                 <?php endif; ?>
             </div>
 
@@ -70,7 +76,12 @@
                 <li><a href="<?php echo esc_url(home_url('/about-us')); ?>">ℹ️ About Us</a></li>
                 <li><a href="<?php echo esc_url(home_url('/contact-us')); ?>">📞 Contact Us</a></li>
             </ul>
-            <a href="<?php echo esc_url(wp_login_url()); ?>" class="yps-btn-login mobile-login">Login / Sign Up</a>
+            <?php if (is_user_logged_in()) : ?>
+                <a href="<?php echo esc_url(YPS_Login_Routing::role_home_url()); ?>" class="yps-btn-login mobile-login" id="mobile-dashboard-btn"><?php echo esc_html($yps_label); ?></a>
+                <a href="<?php echo esc_url(wp_logout_url()); ?>" class="mobile-logout" id="mobile-logout-btn" style="display:block;text-align:center;margin-top:12px;font-weight:700;opacity:.8;">Logout</a>
+            <?php else : ?>
+                <a href="<?php echo esc_url(YPS_Login_Routing::login_page_url()); ?>" class="yps-btn-login mobile-login" id="mobile-login-btn">Login / Sign Up</a>
+            <?php endif; ?>
         </div>
     </div>
 

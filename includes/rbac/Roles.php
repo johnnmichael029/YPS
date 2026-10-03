@@ -104,7 +104,7 @@ class YPS_RBAC {
      */
     public static function enforce_access($allowed_roles = array()) {
         if (!is_user_logged_in()) {
-            wp_redirect(home_url('/login?redirect=' . urlencode($_SERVER['REQUEST_URI'])));
+            wp_safe_redirect(YPS_Login_Routing::login_url_for_current());
             exit;
         }
 

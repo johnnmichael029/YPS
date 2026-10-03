@@ -4,10 +4,10 @@
  * YPS Gaming - Pilot Dashboard Page Template
  */
 
-get_header();
-
-// Enforce Pilot Access Control
+// Enforce Pilot Access Control (must run before any output so redirects work)
 YPS_RBAC::enforce_access(array('yps_pilot', 'administrator'));
+
+get_header();
 
 $current_user = wp_get_current_user();
 $pilot_name   = $current_user->display_name;
@@ -38,7 +38,7 @@ foreach ($all_assigned as $o) {
             <div style="font-size:0.8rem;color:#FF6B9D;font-weight:700;text-transform:uppercase;letter-spacing:1px;">👨‍✈️ Pilot Portal</div>
             <h1 style="font-size:1.8rem;font-weight:900;color:#1a1a2e;margin-top:4px;">Welcome back, <?php echo esc_html($pilot_name); ?>! 👋</h1>
         </div>
-        <a href="<?php echo esc_url(wp_logout_url(home_url())); ?>" class="yps-btn yps-btn-outline yps-btn-sm">Logout →</a>
+        <a href="<?php echo esc_url(wp_logout_url()); ?>" class="yps-btn yps-btn-outline yps-btn-sm">Logout →</a>
     </div>
 
     <!-- Stats Row -->

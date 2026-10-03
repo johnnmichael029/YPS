@@ -9,6 +9,7 @@ require_once get_template_directory() . '/includes/models/OrderModel.php';
 require_once get_template_directory() . '/includes/models/UserModel.php';
 require_once get_template_directory() . '/includes/controllers/OrderController.php';
 require_once get_template_directory() . '/includes/controllers/AuthController.php';
+require_once get_template_directory() . '/includes/auth/LoginRouting.php';
 
 // Automatically load page view templates from pages/ subfolder
 function yps_template_include_pages($template) {

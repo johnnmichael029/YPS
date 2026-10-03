@@ -21,6 +21,7 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           server-dir: /site/wwwroot/wp-content/themes/yps-theme/
+          security: true
           exclude: |
             **/.git*
             **/.git*/**

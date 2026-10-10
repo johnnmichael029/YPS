@@ -27,18 +27,33 @@ get_header();
             <button class="filter-tab active" data-filter="all" id="filter-all" role="tab" aria-selected="true">
                 🎮 All Games
             </button>
-            <button class="filter-tab" data-filter="genshin" id="filter-genshin" role="tab">
-                🌸 Genshin Impact
+            <?php
+            $tab_games = array(
+                'genshin'   => 'Genshin Impact',
+                'honkai'    => 'Honkai: Star Rail',
+                'zenless'   => 'Zenless Zone Zero',
+                'wuthering' => 'Wuthering Waves',
+            );
+            $emojis = array('genshin' => '🌸', 'honkai' => '⭐', 'zenless' => '⚡', 'wuthering' => '🌊');
+            foreach ($tab_games as $tslug => $tname) :
+                $t_possible = array("game-{$tslug}.jpg", "game-{$tslug}.png", "game-{$tslug}.webp", "bg-{$tslug}.jpg", "bg-{$tslug}.png", "bg-{$tslug}.webp");
+                $t_img = '';
+                foreach ($t_possible as $tpf) {
+                    if (file_exists(get_template_directory() . '/assets/images/' . $tpf)) {
+                        $t_img = $tpf;
+                        break;
+                    }
+                }
+            ?>
+            <button class="filter-tab" data-filter="<?php echo esc_attr($tslug); ?>" id="filter-<?php echo esc_attr($tslug); ?>" role="tab" style="display:inline-flex;align-items:center;gap:6px;">
+                <?php if ($t_img) : ?>
+                    <img src="<?php echo get_template_directory_uri(); ?>/assets/images/<?php echo esc_attr($t_img); ?>" alt="<?php echo esc_attr($tname); ?>" style="width:20px;height:20px;border-radius:6px;object-fit:cover;">
+                <?php else : ?>
+                    <span><?php echo $emojis[$tslug]; ?></span>
+                <?php endif; ?>
+                <?php echo esc_html($tname); ?>
             </button>
-            <button class="filter-tab" data-filter="honkai" id="filter-honkai" role="tab">
-                ⭐ Honkai: Star Rail
-            </button>
-            <button class="filter-tab" data-filter="zenless" id="filter-zenless" role="tab">
-                ⚡ Zenless Zone Zero
-            </button>
-            <button class="filter-tab" data-filter="wuthering" id="filter-wuthering" role="tab">
-                🌊 Wuthering Waves
-            </button>
+            <?php endforeach; ?>
         </div>
 
         <?php
@@ -47,7 +62,25 @@ get_header();
         foreach ($service_blocks as $block) : ?>
         <div class="service-game-block fade-up" data-game="<?php echo esc_attr($block['id']); ?>" id="services-<?php echo esc_attr($block['id']); ?>">
             <div class="game-block-header" style="margin-bottom:28px;">
-                <div class="game-block-icon" style="font-size:2.5rem;"><?php echo $block['icon']; ?></div>
+                <?php
+                $slug = $block['id'];
+                $possible_files = array("game-{$slug}.jpg", "game-{$slug}.png", "game-{$slug}.webp", "bg-{$slug}.jpg", "bg-{$slug}.png", "bg-{$slug}.webp");
+                $block_img = '';
+                foreach ($possible_files as $pf) {
+                    if (file_exists(get_template_directory() . '/assets/images/' . $pf)) {
+                        $block_img = $pf;
+                        break;
+                    }
+                }
+                if ($block_img) : ?>
+                    <div class="game-block-icon" style="overflow:hidden; padding:0; width:52px; height:52px; border-radius:14px; box-shadow:0 4px 14px rgba(0,0,0,0.12);">
+                        <img src="<?php echo get_template_directory_uri(); ?>/assets/images/<?php echo esc_attr($block_img); ?>" 
+                             alt="<?php echo esc_attr($block['name']); ?>" 
+                             style="width:100%; height:100%; object-fit:cover;">
+                    </div>
+                <?php else : ?>
+                    <div class="game-block-icon"><?php echo $block['icon']; ?></div>
+                <?php endif; ?>
                 <div>
                     <h2 class="game-block-title" style="font-size:1.8rem;font-weight:800;"><?php echo esc_html($block['name']); ?></h2>
                     <div class="game-block-sub" style="color:#777;font-size:0.9rem;">Choose a service category to get started</div>

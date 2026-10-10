@@ -282,9 +282,19 @@ add_filter('show_admin_bar', '__return_false');
             };
 
             var msgBox = document.getElementById('yps-login-msg');
+            var pageNotice = document.getElementById('yps-login-notice');
             var tabs = document.getElementById('yps-tabs');
+            var msgTimer = null;
+
+            function clearMsg() {
+                if (msgTimer) { clearTimeout(msgTimer); msgTimer = null; }
+                msgBox.classList.add('hidden');
+                msgBox.textContent = '';
+                if (pageNotice) pageNotice.style.display = 'none';
+            }
 
             function showMsg(text, type) {
+                if (msgTimer) { clearTimeout(msgTimer); msgTimer = null; }
                 var ok = type === 'success';
                 msgBox.textContent = text;
                 msgBox.style.background = ok ? '#f0fdf4' : '#fef2f2';
@@ -299,12 +309,18 @@ add_filter('show_admin_bar', '__return_false');
                         submitBtn.parentNode.insertBefore(msgBox, submitBtn);
                     }
                 }
+
+                // Auto-dismiss warning/error after 3 seconds
+                msgTimer = setTimeout(function () {
+                    msgBox.classList.add('hidden');
+                }, 3000);
             }
-            function clearMsg() {
-                msgBox.classList.add('hidden');
-                msgBox.textContent = '';
-                var pageNotice = document.getElementById('yps-login-notice');
-                if (pageNotice) pageNotice.style.display = 'none';
+
+            // Auto-dismiss logout notice after 3 seconds
+            if (pageNotice) {
+                setTimeout(function () {
+                    pageNotice.style.display = 'none';
+                }, 3000);
             }
 
             function setView(view, push) {

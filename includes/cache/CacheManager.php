@@ -104,19 +104,9 @@ class YPS_Cache {
      * or start buffering output to save it.
      */
     public static function page_cache_start() {
-        if (self::should_skip_page_cache()) return;
-
-        $key    = self::page_key();
-        $cached = self::get($key);
-
-        if ($cached !== false) {
-            // ✅ Zero PHP/DB work — serve pre-built HTML
-            echo $cached;
-            exit;
-        }
-
-        // Start capturing output so we can save it
-        ob_start(array('YPS_Cache', 'page_cache_save'));
+        // Full-page HTML output caching is disabled to guarantee real-time session header synchronization.
+        // Object & Query-level caching via YPS_Cache::remember() handles DB performance.
+        return;
     }
 
     /**

@@ -238,19 +238,15 @@ function yps_page_transition_script() {
             setProgress(40);
             mainEl.classList.add('spa-loading');
 
-            // Serve from in-memory JS cache if recently loaded
-            if (pageCache[url]) {
-                renderHTML(pageCache[url], url, pushHistory);
-                return;
-            }
-
-            fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            fetch(url, { 
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin'
+            })
                 .then(function(res) {
                     if (!res.ok) throw new Error('HTTP ' + res.status);
                     return res.text();
                 })
                 .then(function(html) {
-                    pageCache[url] = html;
                     renderHTML(html, url, pushHistory);
                 })
                 .catch(function(err) {
@@ -273,6 +269,19 @@ function yps_page_transition_script() {
             } else {
                 window.location.href = url;
                 return;
+            }
+
+            // Sync Header Nav Actions & Mobile Menu (My Orders vs Login button)
+            var newNavActions = doc.querySelector('.yps-nav-actions');
+            var currNavActions = document.querySelector('.yps-nav-actions');
+            if (newNavActions && currNavActions) {
+                currNavActions.innerHTML = newNavActions.innerHTML;
+            }
+
+            var newMobileInner = doc.querySelector('.mobile-menu-inner');
+            var currMobileInner = document.querySelector('.mobile-menu-inner');
+            if (newMobileInner && currMobileInner) {
+                currMobileInner.innerHTML = newMobileInner.innerHTML;
             }
 
             if (pushHistory) {

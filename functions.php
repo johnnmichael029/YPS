@@ -153,11 +153,11 @@ function yps_remove_wp_bloat() {
 }
 add_action('wp_enqueue_scripts', 'yps_remove_wp_bloat', 100);
 
-// 4. Add browser caching headers for static assets
+// 4. Set appropriate cache headers (no-cache for dynamic HTML pages so user session state is always fresh)
 function yps_cache_headers() {
     if (!is_admin()) {
-        header('Cache-Control: public, max-age=86400, stale-while-revalidate=3600');
-        header('Vary: Accept-Encoding');
+        header('Cache-Control: no-cache, must-revalidate, max-age=0');
+        header('Vary: Cookie, Accept-Encoding');
     }
 }
 add_action('send_headers', 'yps_cache_headers');

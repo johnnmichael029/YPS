@@ -130,60 +130,73 @@ get_header();
 </section>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const tabs = document.querySelectorAll('.filter-tab');
-    const blocks = document.querySelectorAll('.service-game-block');
+(function() {
+    function initServicesTabs() {
+        const tabs = document.querySelectorAll('.filter-tab');
+        const blocks = document.querySelectorAll('.service-game-block');
+        if (!tabs.length || !blocks.length) return;
 
-    function activateFilter(filter, scroll) {
-        tabs.forEach(t => {
-            if (t.dataset.filter === filter) {
-                t.classList.add('active');
-                t.setAttribute('aria-selected','true');
-            } else {
-                t.classList.remove('active');
-                t.setAttribute('aria-selected','false');
-            }
-        });
+        function activateFilter(filter, scroll) {
+            tabs.forEach(t => {
+                if (t.dataset.filter === filter) {
+                    t.classList.add('active');
+                    t.setAttribute('aria-selected','true');
+                } else {
+                    t.classList.remove('active');
+                    t.setAttribute('aria-selected','false');
+                }
+            });
 
-        blocks.forEach(function(block) {
-            if (filter === 'all' || block.dataset.game === filter) {
-                block.style.display = 'block';
-            } else {
-                block.style.display = 'none';
-            }
-        });
+            blocks.forEach(function(block) {
+                if (filter === 'all' || block.dataset.game === filter) {
+                    block.style.display = 'block';
+                    block.classList.add('visible');
+                } else {
+                    block.style.display = 'none';
+                }
+            });
 
-        if (scroll) {
-            const target = document.getElementById('services-content');
-            if (target) {
-                const navOffset = 80;
-                const elementPosition = target.getBoundingClientRect().top + window.pageYOffset;
-                window.scrollTo({
-                    top: elementPosition - navOffset,
-                    behavior: 'smooth'
-                });
+            if (scroll) {
+                const target = document.getElementById('services-content');
+                if (target) {
+                    const navOffset = 80;
+                    const elementPosition = target.getBoundingClientRect().top + window.pageYOffset;
+                    window.scrollTo({
+                        top: elementPosition - navOffset,
+                        behavior: 'smooth'
+                    });
+                }
             }
         }
-    }
 
-    // Auto-activate tab from URL hash (e.g. /services#genshin)
-    const hash = window.location.hash.replace('#', '');
-    if (hash && ['genshin', 'honkai', 'zenless', 'wuthering'].includes(hash)) {
-        activateFilter(hash, true);
-    }
+        const hash = window.location.hash.replace('#', '');
+        if (hash && ['genshin', 'honkai', 'zenless', 'wuthering'].includes(hash)) {
+            activateFilter(hash, true);
+        } else {
+            activateFilter('all', false);
+        }
 
-    tabs.forEach(function(tab) {
-        tab.addEventListener('click', function() {
-            const filter = this.dataset.filter;
-            activateFilter(filter, false);
-            if (filter !== 'all') {
-                window.history.replaceState(null, null, '#' + filter);
-            } else {
-                window.history.replaceState(null, null, window.location.pathname);
-            }
+        tabs.forEach(function(tab) {
+            tab.onclick = function(e) {
+                e.preventDefault();
+                const filter = this.dataset.filter;
+                activateFilter(filter, false);
+                if (filter !== 'all') {
+                    window.history.replaceState(null, null, '#' + filter);
+                } else {
+                    window.history.replaceState(null, null, window.location.pathname);
+                }
+            };
         });
-    });
-});
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initServicesTabs);
+    } else {
+        initServicesTabs();
+    }
+    document.addEventListener('yps:page-loaded', initServicesTabs);
+})();
 </script>
 
 <?php get_footer(); ?>

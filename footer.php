@@ -112,6 +112,41 @@
     </div>
 </footer>
 
+<script>
+(function() {
+    // Instant Link Prefetching for Fast Page Navigation
+    const prefetched = new Set();
+    function prefetchUrl(url) {
+        if (!url || prefetched.has(url)) return;
+        try {
+            const parsed = new URL(url, location.href);
+            if (parsed.origin !== location.origin) return;
+            if (parsed.pathname === location.pathname && parsed.hash) return;
+            prefetched.add(url);
+            const link = document.createElement('link');
+            link.rel = 'prefetch';
+            link.href = url;
+            link.as = 'document';
+            document.head.appendChild(link);
+        } catch(e){}
+    }
+
+    document.addEventListener('mouseover', function(e) {
+        const anchor = e.target.closest('a');
+        if (anchor && anchor.href) {
+            prefetchUrl(anchor.href);
+        }
+    }, { passive: true });
+
+    document.addEventListener('touchstart', function(e) {
+        const anchor = e.target.closest('a');
+        if (anchor && anchor.href) {
+            prefetchUrl(anchor.href);
+        }
+    }, { passive: true });
+})();
+</script>
+
 <?php wp_footer(); ?>
 </body>
 

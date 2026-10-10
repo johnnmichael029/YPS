@@ -7,20 +7,20 @@ get_header();
 ?>
 
 <!-- PAGE HERO -->
-<section class="yps-page-hero" id="services-hero">
+<section class="yps-page-hero" id="services-hero" style="padding: calc(var(--nav-height) + 20px) 0 20px;">
     <div class="yps-container">
         <div class="page-hero-content">
-            <div class="hero-badge" style="display:inline-flex; margin: 0 auto 16px; background:rgba(255,107,157,0.15); border:1px solid rgba(255,107,157,0.3); color:#FFB3CF; border-radius:999px; padding:6px 16px; font-size:0.8rem; font-weight:600; letter-spacing:0.5px;">
+            <div class="hero-badge" style="display:inline-flex; margin: 0 auto 10px; background:rgba(255,107,157,0.15); border:1px solid rgba(255,107,157,0.3); color:#FFB3CF; border-radius:999px; padding:4px 14px; font-size:0.75rem; font-weight:600; letter-spacing:0.5px;">
                 🎮 Professional Gaming Services
             </div>
-            <h1>Our Services</h1>
-            <p>Choose your game and service. We'll take care of the rest!</p>
+            <h1 style="font-size: clamp(1.8rem, 3.5vw, 2.4rem); margin-bottom: 6px;">Our Services</h1>
+            <p style="font-size: 0.95rem; max-width: 460px;">Choose your game and service. We'll take care of the rest!</p>
         </div>
     </div>
 </section>
 
 <!-- SERVICES SECTION -->
-<section class="services-section" id="services-content">
+<section class="services-section" id="services-content" style="padding-top: 30px;">
     <div class="yps-container">
         <!-- Filter Tabs -->
         <div class="yps-filter-tabs" id="services-filter-tabs" role="tablist">
@@ -134,21 +134,53 @@ document.addEventListener('DOMContentLoaded', function() {
     const tabs = document.querySelectorAll('.filter-tab');
     const blocks = document.querySelectorAll('.service-game-block');
 
+    function activateFilter(filter, scroll) {
+        tabs.forEach(t => {
+            if (t.dataset.filter === filter) {
+                t.classList.add('active');
+                t.setAttribute('aria-selected','true');
+            } else {
+                t.classList.remove('active');
+                t.setAttribute('aria-selected','false');
+            }
+        });
+
+        blocks.forEach(function(block) {
+            if (filter === 'all' || block.dataset.game === filter) {
+                block.style.display = 'block';
+            } else {
+                block.style.display = 'none';
+            }
+        });
+
+        if (scroll) {
+            const target = document.getElementById('services-content');
+            if (target) {
+                const navOffset = 80;
+                const elementPosition = target.getBoundingClientRect().top + window.pageYOffset;
+                window.scrollTo({
+                    top: elementPosition - navOffset,
+                    behavior: 'smooth'
+                });
+            }
+        }
+    }
+
+    // Auto-activate tab from URL hash (e.g. /services#genshin)
+    const hash = window.location.hash.replace('#', '');
+    if (hash && ['genshin', 'honkai', 'zenless', 'wuthering'].includes(hash)) {
+        activateFilter(hash, true);
+    }
+
     tabs.forEach(function(tab) {
         tab.addEventListener('click', function() {
             const filter = this.dataset.filter;
-
-            tabs.forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected','false'); });
-            this.classList.add('active');
-            this.setAttribute('aria-selected','true');
-
-            blocks.forEach(function(block) {
-                if (filter === 'all' || block.dataset.game === filter) {
-                    block.style.display = 'block';
-                } else {
-                    block.style.display = 'none';
-                }
-            });
+            activateFilter(filter, false);
+            if (filter !== 'all') {
+                window.history.replaceState(null, null, '#' + filter);
+            } else {
+                window.history.replaceState(null, null, window.location.pathname);
+            }
         });
     });
 });

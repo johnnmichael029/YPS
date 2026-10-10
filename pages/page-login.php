@@ -133,6 +133,12 @@ add_filter('show_admin_bar', '__return_false');
 
                 <div class="rounded-3xl bg-white p-7 sm:p-9" style="box-shadow:0 20px 60px rgba(13,33,55,.10);border:1px solid rgba(255,107,157,.12);">
 
+                    <!-- Sign In / Register tabs at top -->
+                    <div id="yps-tabs" class="flex gap-1 rounded-xl p-1 mb-6" style="background:#f1f5f9;">
+                        <button type="button" class="yps-tab" data-view="signin" id="tab-signin">Sign In</button>
+                        <button type="button" class="yps-tab" data-view="register" id="tab-register">Create Account</button>
+                    </div>
+
                     <?php if ($notice) : ?>
                         <div class="mb-5 rounded-xl px-4 py-3 text-sm font-semibold" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;" id="yps-login-notice" role="status">
                             <?php echo esc_html($notice); ?>
@@ -140,12 +146,6 @@ add_filter('show_admin_bar', '__return_false');
                     <?php endif; ?>
 
                     <div id="yps-login-msg" class="hidden mb-5 rounded-xl px-4 py-3 text-sm font-semibold" role="alert" aria-live="polite"></div>
-
-                    <!-- Sign In / Register tabs -->
-                    <div id="yps-tabs" class="flex gap-1 rounded-xl p-1 mb-7" style="background:#f1f5f9;">
-                        <button type="button" class="yps-tab" data-view="signin" id="tab-signin">Sign In</button>
-                        <button type="button" class="yps-tab" data-view="register" id="tab-register">Create Account</button>
-                    </div>
 
                     <!-- ============ SIGN IN ============ -->
                     <div class="yps-view" data-view-panel="signin">
@@ -291,8 +291,21 @@ add_filter('show_admin_bar', '__return_false');
                 msgBox.style.color = ok ? '#166534' : '#991b1b';
                 msgBox.style.border = '1px solid ' + (ok ? '#bbf7d0' : '#fecaca');
                 msgBox.classList.remove('hidden');
+
+                var activePanel = document.querySelector('.yps-view.is-active');
+                if (activePanel) {
+                    var submitBtn = activePanel.querySelector('button[type="submit"]');
+                    if (submitBtn && submitBtn.parentNode) {
+                        submitBtn.parentNode.insertBefore(msgBox, submitBtn);
+                    }
+                }
             }
-            function clearMsg() { msgBox.classList.add('hidden'); msgBox.textContent = ''; }
+            function clearMsg() {
+                msgBox.classList.add('hidden');
+                msgBox.textContent = '';
+                var pageNotice = document.getElementById('yps-login-notice');
+                if (pageNotice) pageNotice.style.display = 'none';
+            }
 
             function setView(view, push) {
                 document.querySelectorAll('[data-view-panel]').forEach(function (p) {

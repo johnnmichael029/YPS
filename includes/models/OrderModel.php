@@ -78,22 +78,30 @@ class YPS_Order_Model {
         );
 
         $merged_args = wp_parse_args($args, $default_args);
-        return get_posts($merged_args);
+        $cache_key   = 'orders_q_' . md5(serialize($merged_args));
+
+        return YPS_Cache::remember($cache_key, function() use ($merged_args) {
+            return get_posts($merged_args);
+        }, YPS_Cache::TTL_ORDERS);
     }
 
     /**
      * Get single order by order number or post ID
      */
     public static function get_order_by_number($order_number) {
-        $orders = get_posts(array(
-            'post_type'  => 'yps_order',
-            'meta_query' => array(
-                array('key' => 'yps_order_id', 'value' => $order_number, 'compare' => '='),
-            ),
-            'posts_per_page' => 1,
-        ));
+        $cache_key = 'orders_num_' . md5($order_number);
 
-        return !empty($orders) ? $orders[0] : null;
+        return YPS_Cache::remember($cache_key, function() use ($order_number) {
+            $orders = get_posts(array(
+                'post_type'  => 'yps_order',
+                'meta_query' => array(
+                    array('key' => 'yps_order_id', 'value' => $order_number, 'compare' => '='),
+                ),
+                'posts_per_page' => 1,
+            ));
+
+            return !empty($orders) ? $orders[0] : null;
+        }, YPS_Cache::TTL_ORDERS);
     }
 
     /**

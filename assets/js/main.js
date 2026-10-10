@@ -1,208 +1,184 @@
 /**
  * YPS Gaming Theme - Main JavaScript
- * Handles: Navbar scroll, mobile menu, scroll animations, booking tabs
+ * Handles: Navbar scroll, mobile menu, scroll animations, booking tabs, dynamic UI initializations
+ * SPA-aware: all per-page inits run inside initPage() which fires on
+ *   both initial load and on every AJAX page swap (yps:page-loaded event).
  */
 
 (function() {
     'use strict';
 
-    document.addEventListener('DOMContentLoaded', function() {
-
-        // =============================================
-        // NAVBAR SCROLL EFFECT
-        // =============================================
+    /* ==========================================================================
+       GLOBAL INITIALIZATION (Runs once per document lifetime)
+       ========================================================================== */
+    function initGlobal() {
+        // Navbar Scroll Blur & Shadow
         const navbar = document.getElementById('yps-navbar');
         if (navbar) {
             window.addEventListener('scroll', function() {
-                navbar.classList.toggle('scrolled', window.scrollY > 50);
+                if (window.scrollY > 20) {
+                    navbar.classList.add('scrolled');
+                } else {
+                    navbar.classList.remove('scrolled');
+                }
             }, { passive: true });
         }
 
-        // =============================================
-        // MOBILE HAMBURGER MENU
-        // =============================================
-        const hamburger   = document.getElementById('yps-hamburger');
-        const mobileMenu  = document.getElementById('yps-mobile-menu');
-
-        if (hamburger && mobileMenu) {
-            hamburger.addEventListener('click', function() {
-                const isOpen = mobileMenu.classList.toggle('open');
-                hamburger.classList.toggle('open', isOpen);
-                hamburger.setAttribute('aria-expanded', isOpen.toString());
-                document.body.style.overflow = isOpen ? 'hidden' : '';
+        // Mobile Menu Toggle
+        const mobileToggle = document.getElementById('mobile-toggle');
+        const navLinks = document.querySelector('.yps-nav-links');
+        if (mobileToggle && navLinks) {
+            mobileToggle.addEventListener('click', function() {
+                navLinks.classList.toggle('active');
+                mobileToggle.classList.toggle('open');
+                document.body.classList.toggle('menu-open');
             });
 
-            // Close on link click
-            mobileMenu.querySelectorAll('a').forEach(function(link) {
-                link.addEventListener('click', function() {
-                    mobileMenu.classList.remove('open');
-                    hamburger.classList.remove('open');
-                    hamburger.setAttribute('aria-expanded', 'false');
-                    document.body.style.overflow = '';
-                });
-            });
-
-            // Close on backdrop click
-            document.addEventListener('click', function(e) {
-                if (!mobileMenu.contains(e.target) && !hamburger.contains(e.target)) {
-                    mobileMenu.classList.remove('open');
-                    hamburger.classList.remove('open');
-                    hamburger.setAttribute('aria-expanded', 'false');
-                    document.body.style.overflow = '';
+            // Close on link click inside mobile menu
+            navLinks.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    navLinks.classList.remove('active');
+                    mobileToggle.classList.remove('open');
+                    document.body.classList.remove('menu-open');
                 }
             });
         }
 
-        // =============================================
-        // SCROLL ANIMATIONS (Intersection Observer)
-        // =============================================
-        const fadeEls = document.querySelectorAll('.fade-up');
-        if (fadeEls.length && 'IntersectionObserver' in window) {
-            const observer = new IntersectionObserver(function(entries) {
+        // Back to Top Button
+        const backToTopBtn = document.getElementById('back-to-top');
+        if (backToTopBtn) {
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 400) {
+                    backToTopBtn.classList.add('visible');
+                } else {
+                    backToTopBtn.classList.remove('visible');
+                }
+            }, { passive: true });
+
+            backToTopBtn.addEventListener('click', function() {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+    }
+
+    /* ==========================================================================
+       PER-PAGE INITIALIZATION (Runs on DOMContentLoaded AND after SPA page swaps)
+       ========================================================================== */
+    function initPage() {
+        // Auto-Dismiss Flash Alerts & Warnings after 3 seconds
+        const autoDismissAlerts = document.querySelectorAll('.yps-alert, .alert-warning, .alert-info, .alert-success, .alert-danger, .flash-message, .yps-notice');
+        autoDismissAlerts.forEach(function(alert) {
+            // Check if timer already attached
+            if (alert.dataset.dismissTimerSet) return;
+            alert.dataset.dismissTimerSet = 'true';
+
+            setTimeout(function() {
+                alert.style.transition = 'opacity 0.5s ease, transform 0.5s ease, max-height 0.5s ease, margin 0.5s ease, padding 0.5s ease';
+                alert.style.opacity = '0';
+                alert.style.transform = 'translateY(-10px)';
+                setTimeout(function() {
+                    if (alert.parentNode) {
+                        alert.parentNode.removeChild(alert);
+                    }
+                }, 500);
+            }, 3000);
+        });
+
+        // Close Alert Button Event Listeners
+        const closeAlertBtns = document.querySelectorAll('.alert-close, .notice-dismiss');
+        closeAlertBtns.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const parent = btn.closest('.yps-alert, .alert, .yps-notice');
+                if (parent) {
+                    parent.style.opacity = '0';
+                    setTimeout(function() {
+                        if (parent.parentNode) parent.parentNode.removeChild(parent);
+                    }, 300);
+                }
+            });
+        });
+
+        // Tab Navigation Systems (e.g. Services, Booking, Dashboard)
+        const tabBtns = document.querySelectorAll('[data-tab]');
+        tabBtns.forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetTabId = btn.getAttribute('data-tab');
+                const parentContainer = btn.closest('.tab-container, .services-section, .dashboard-section, .yps-tabs-wrapper') || document;
+
+                // Deactivate all sibling tabs
+                const siblingBtns = parentContainer.querySelectorAll('[data-tab]');
+                siblingBtns.forEach(b => b.classList.remove('active'));
+
+                // Hide all sibling content panels
+                const tabPanels = parentContainer.querySelectorAll('.tab-panel, .tab-content');
+                tabPanels.forEach(p => p.classList.remove('active'));
+
+                // Activate clicked tab
+                btn.classList.add('active');
+
+                // Show target content panel
+                const targetPanel = document.getElementById(targetTabId);
+                if (targetPanel) {
+                    targetPanel.classList.add('active');
+                }
+            });
+        });
+
+        // Animate on Scroll Elements
+        if ('IntersectionObserver' in window) {
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+            const animateObserver = new IntersectionObserver(function(entries, observer) {
                 entries.forEach(function(entry) {
                     if (entry.isIntersecting) {
-                        entry.target.classList.add('visible');
+                        entry.target.classList.add('animated');
                         observer.unobserve(entry.target);
                     }
                 });
-            }, {
-                threshold: 0.12,
-                rootMargin: '0px 0px -40px 0px'
-            });
+            }, observerOptions);
 
-            fadeEls.forEach(function(el, idx) {
-                el.style.transitionDelay = (idx % 4) * 0.08 + 's';
-                observer.observe(el);
-            });
-        } else {
-            // Fallback: show all
-            fadeEls.forEach(function(el) { el.classList.add('visible'); });
+            const animatableElements = document.querySelectorAll('.animate-on-scroll, .feature-card, .service-card, .pilot-card');
+            animatableElements.forEach(el => animateObserver.observe(el));
         }
 
-        // =============================================
-        // BOOKING TABS (Home Page)
-        // =============================================
-        const bookingTabs = document.querySelectorAll('.booking-tab');
-        bookingTabs.forEach(function(tab) {
-            tab.addEventListener('mouseenter', function() {
-                bookingTabs.forEach(function(t) { t.classList.remove('active'); });
-                tab.classList.add('active');
-            });
-        });
+        // Smooth Scrolling for Hash Anchor Links (#)
+        const hashLinks = document.querySelectorAll('a[href^="#"]:not([href="#"])');
+        hashLinks.forEach(function(link) {
+            link.addEventListener('click', function(e) {
+                const targetId = link.getAttribute('href').substring(1);
+                const targetEl = document.getElementById(targetId);
+                if (targetEl) {
+                    e.preventDefault();
+                    const navOffset = 80;
+                    const elementPosition = targetEl.getBoundingClientRect().top;
+                    const offsetPosition = elementPosition + window.pageYOffset - navOffset;
 
-        // =============================================
-        // SMOOTH HOVER EFFECTS ON STAT CARDS
-        // =============================================
-        document.querySelectorAll('.stat-card, .feature-card').forEach(function(card) {
-            card.addEventListener('mouseenter', function() {
-                this.style.transform = 'translateY(-4px)';
-            });
-            card.addEventListener('mouseleave', function() {
-                this.style.transform = '';
-            });
-        });
-
-        // =============================================
-        // TOAST NOTIFICATION SYSTEM
-        // =============================================
-        window.ypsToast = function(message, type) {
-            type = type || 'info';
-            var toast = document.createElement('div');
-            toast.className = 'yps-toast ' + type;
-            toast.innerHTML = (type === 'success' ? '✅ ' : type === 'error' ? '❌ ' : 'ℹ️ ') + message;
-            document.body.appendChild(toast);
-            setTimeout(function() { toast.classList.add('show'); }, 10);
-            setTimeout(function() {
-                toast.classList.remove('show');
-                setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 400);
-            }, 4000);
-        };
-
-        // =============================================
-        // COUNTER ANIMATION
-        // =============================================
-        function animateCounter(el, target, suffix) {
-            suffix = suffix || '';
-            var start = 0;
-            var duration = 1500;
-            var startTime = null;
-            var targetNum = parseInt(target.toString().replace(/[^0-9]/g, ''));
-
-            function step(timestamp) {
-                if (!startTime) startTime = timestamp;
-                var progress = Math.min((timestamp - startTime) / duration, 1);
-                var eased = 1 - Math.pow(1 - progress, 3);
-                var current = Math.floor(eased * targetNum);
-
-                if (targetNum >= 1000) {
-                    el.textContent = current.toLocaleString() + suffix;
-                } else {
-                    el.textContent = current + suffix;
+                    window.scrollTo({
+                        top: offsetPosition,
+                        behavior: 'smooth'
+                    });
                 }
-
-                if (progress < 1) { requestAnimationFrame(step); }
-                else { el.textContent = target; }
-            }
-            requestAnimationFrame(step);
-        }
-
-        // Animate stat numbers when in view
-        var statNums = document.querySelectorAll('.pilot-stat-num, .stat-value');
-        if (statNums.length && 'IntersectionObserver' in window) {
-            var counterObserver = new IntersectionObserver(function(entries) {
-                entries.forEach(function(entry) {
-                    if (entry.isIntersecting) {
-                        var el = entry.target;
-                        var raw = el.textContent;
-                        var suffix = raw.replace(/[0-9,]/g, '').trim();
-                        animateCounter(el, raw, '');
-                        counterObserver.unobserve(el);
-                    }
-                });
-            }, { threshold: 0.5 });
-
-            statNums.forEach(function(el) { counterObserver.observe(el); });
-        }
-
-        // =============================================
-        // CHART HOVER TOOLTIPS (Admin Dashboard)
-        // =============================================
-        document.querySelectorAll('.chart-bar').forEach(function(bar) {
-            bar.addEventListener('mouseenter', function(e) {
-                var tooltip = document.createElement('div');
-                tooltip.className = 'chart-tooltip';
-                tooltip.textContent = bar.title || '';
-                tooltip.style.cssText = 'position:fixed;background:#0D2137;color:white;padding:4px 10px;border-radius:6px;font-size:0.75rem;font-weight:700;pointer-events:none;z-index:9999;transform:translate(-50%,-110%);';
-                tooltip.style.left = e.clientX + 'px';
-                tooltip.style.top  = e.clientY + 'px';
-                tooltip.id = 'yps-chart-tooltip';
-                document.body.appendChild(tooltip);
-            });
-            bar.addEventListener('mouseleave', function() {
-                var t = document.getElementById('yps-chart-tooltip');
-                if (t) t.remove();
             });
         });
+    }
 
-        // =============================================
-        // SCROLL TO TOP (if > 400px)
-        // =============================================
-        var scrollTopBtn = document.createElement('button');
-        scrollTopBtn.innerHTML = '↑';
-        scrollTopBtn.id = 'yps-scroll-top';
-        scrollTopBtn.setAttribute('aria-label', 'Scroll to top');
-        scrollTopBtn.style.cssText = 'position:fixed;bottom:24px;left:24px;width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#FF6B9D,#9B59B6);color:white;font-size:1.1rem;font-weight:700;box-shadow:0 4px 15px rgba(255,107,157,0.4);opacity:0;transition:all 0.3s;z-index:998;cursor:pointer;border:none;display:flex;align-items:center;justify-content:center;';
-        document.body.appendChild(scrollTopBtn);
-
-        window.addEventListener('scroll', function() {
-            scrollTopBtn.style.opacity = window.scrollY > 400 ? '1' : '0';
-            scrollTopBtn.style.pointerEvents = window.scrollY > 400 ? 'all' : 'none';
-        }, { passive: true });
-
-        scrollTopBtn.addEventListener('click', function() {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Initialize Global setup once
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            initGlobal();
+            initPage();
         });
+    } else {
+        initGlobal();
+        initPage();
+    }
 
-    }); // DOMContentLoaded
+    // Re-initialize page logic when SPA router updates page content dynamically
+    document.addEventListener('yps:page-loaded', function() {
+        initPage();
+    });
 
 })();

@@ -10,7 +10,7 @@ get_header();
 <section class="yps-hero" id="hero-section">
     <div class="hero-bg">
         <img src="<?php echo get_template_directory_uri(); ?>/assets/images/bg-poster.png"
-            alt="YPS Gaming Hero Background" loading="eager">
+            alt="YPS Gaming Hero Background" loading="eager" fetchpriority="high" decoding="async">
     </div>
     <div class="yps-container">
         <div class="hero-content">

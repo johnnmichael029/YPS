@@ -117,9 +117,17 @@ get_header();
             <div class="game-card fade-up" id="game-card-<?php echo esc_attr($game['slug']); ?>">
                 <div class="game-thumb" style="background: <?php echo $game['color']; ?>;">
                     <?php
-                    $thumb_path = get_template_directory() . '/assets/images/game-' . $game['slug'] . '.jpg';
-                    if (file_exists($thumb_path)) : ?>
-                        <img src="<?php echo get_template_directory_uri(); ?>/assets/images/game-<?php echo esc_attr($game['slug']); ?>.jpg"
+                    $slug = $game['slug'];
+                    $possible_files = array("game-{$slug}.jpg", "bg-{$slug}.jpg", "game-{$slug}.png", "bg-{$slug}.png", "game-{$slug}.webp", "bg-{$slug}.webp");
+                    $found_image = '';
+                    foreach ($possible_files as $pf) {
+                        if (file_exists(get_template_directory() . '/assets/images/' . $pf)) {
+                            $found_image = $pf;
+                            break;
+                        }
+                    }
+                    if ($found_image) : ?>
+                        <img src="<?php echo get_template_directory_uri(); ?>/assets/images/<?php echo esc_attr($found_image); ?>"
                              alt="<?php echo esc_attr($game['name']); ?>">
                     <?php else : ?>
                         <div class="game-thumb-placeholder"><?php echo $game['icon']; ?></div>
